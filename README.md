@@ -1,104 +1,169 @@
 # Kroki Editorial Diagrams
 
-A premium, unified diagramming skill designed for **Claude Code** (and similar agentic workflows).
+A premium, unified diagramming skill for **Claude Code** and **Antigravity IDE** (Gemini CLI).
 
-It combines **auto-layout multi-engine diagrammatic DSLs** (PlantUML, C4, D2, Mermaid, Graphviz, ERD) with the **aesthetic styling guidelines** of high-end editorial design, featuring **interactive SVG wrappers** and **automated gallery indexing**.
+It pairs **multi-engine diagrammatic DSLs** (PlantUML, C4, D2, Mermaid, Graphviz, ERD, BPMN) with **editorial design guidelines**, producing **interactive SVG viewers**, **dark-mode gallery indexes**, and **shareable Kroki URLs** — all from a single Python-backed skill.
+
+Maintained by [Labinator.com](https://labinator.com).
+
+---
 
 ## Key Features
 
-1. **Editorial Theme Out-of-the-Box**: Uses a gorgeous warm-editorial color system (paper background `#f5f5f5`, ink `#2d3142`, slate muted `#4f5d75`, rust-accent `#eb6c36`) with Geist Sans/Mono typography.
-2. **Brand-Matching Onboarding**: Includes guidelines to scan any target website, extract its colors/typography, and compile a brand-matching custom stylesheet.
-3. **Engine Independence**: Automatically chooses the ideal engine (D2, PlantUML, Mermaid, Graphviz, ERD) based on your semantic use case (flows, state-machines, system architecture, database schemas).
-4. **Auto-Layout with Layout Discipline**: Standardizes on a strict **Narrow & Tall** standard (max ~800px width, vertical flows) to ensure charts fit perfectly on standard viewports without horizontal scrolling.
-5. **Interactive Exploration**: Builds an `interactive.html` wrapper adding click-to-highlight node focus, edge flow animations, and dimmed out inactive elements.
-6. **Automated Directory Cataloging**: Generates a unified `index.html` gallery card deck listing all diagrams generated inside the folder.
-7. **Robust Error Handling**: Integrates a complete gotcha checklist for Kroki API URL-decoding traps, Mermaid version discrepancies, and Vega-Lite SVG layer issues.
+1. **Editorial Theme Out-of-the-Box** — Warm paper `#f5f5f5`, ink `#2d3142`, slate `#4f5d75`, rust-accent `#eb6c36`. Geist Sans/Mono + Instrument Serif typography. Dark-mode support via `prefers-color-scheme`.
+2. **Engine Independence** — Auto-selects D2, PlantUML, C4, Mermaid, Graphviz, ERD, or BPMN based on semantic use case. All engines are wired end-to-end.
+3. **Interactive SVG Viewer** — Click-to-highlight node focus, animated edge flow, dimmed inactive elements, pan/zoom with keyboard shortcuts. Full interactivity on D2, PlantUML, and Graphviz; best-effort on Mermaid and ERD.
+4. **Automated Gallery Index** — Generates a `index.html` card-deck from all diagrams in a folder, with grid/list toggle and per-engine color coding.
+5. **Narrow & Tall Layout Standard** — Max ~800px width, vertical flows enforced across all engines to prevent horizontal scrolling.
+6. **Robust Error Handling** — `curl -f` detects HTTP 4xx/5xx from Kroki. 30-second timeout. Shareable Kroki URL printed on failure for manual debugging.
+7. **Secure SVG Parsing** — Uses `defusedxml` to prevent XXE injection when wrapping SVG files in the interactive viewer.
+8. **Test Suite** — 10 pytest tests covering engine registration, URL encoding, pluralization, SVG annotation, and HTML generation.
+
+---
+
+## Supported Engines
+
+| Engine       | Best For                                  | SVG | PNG | PDF |
+| ------------ | ----------------------------------------- | --- | --- | --- |
+| `plantuml`   | Sequences, class diagrams, state machines | Yes | Yes | Yes |
+| `c4plantuml` | C4 container/context architecture         | Yes | Yes | Yes |
+| `d2`         | Modern system architecture, cloud layouts | Yes | —   | —   |
+| `mermaid`    | Flowcharts, timelines, Git graphs         | Yes | Yes | Yes |
+| `graphviz`   | Complex DAGs, dependency graphs           | Yes | Yes | Yes |
+| `erd`        | Database entity-relationship diagrams     | Yes | Yes | —   |
+| `bpmn`       | Business process / workflow compliance    | Yes | Yes | —   |
+
+---
 
 ## Folder Structure
 
 ```text
 kroki-editorial-diagrams/
 ├── README.md
+├── CHANGELOG.md
+├── CONTRIBUTING.md
 ├── LICENSE
 ├── package.json
+├── .github/
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── ISSUE_TEMPLATE/
+│       ├── bug_report.md
+│       └── feature_request.md
 └── skills/
     └── kroki-editorial-diagrams/
-        ├── SKILL.md                 # Main LLM instruction set
-        ├── scripts/                 # Core Python runner and wrappers
-        │   ├── render_kroki_diagram.py
-        │   ├── build_interactive_kroki_html.py
-        │   └── build_diagram_index.py
-        └── references/              # Detailed style rules and taxonomy
+        ├── SKILL.md                       # Main LLM instruction set
+        ├── scripts/
+        │   ├── render_kroki_diagram.py    # Kroki API caller, SVG/PNG renderer
+        │   ├── build_interactive_kroki_html.py  # Interactive HTML wrapper
+        │   ├── build_diagram_index.py     # Gallery index generator
+        │   ├── requirements.txt           # Python dependencies (defusedxml)
+        │   └── tests/
+        │       └── test_scripts.py        # pytest suite (10 tests)
+        └── references/
             ├── style-guide.md
+            ├── engine-matrix.md
             ├── engine-style-templates.md
             ├── use-case-taxonomy.md
             ├── diagram-selection.md
-            ├── engine-matrix.md
             ├── interactive-support.md
             ├── kroki-safe-subset.md
             ├── layout-control.md
             └── output-placement.md
 ```
 
+---
+
 ## How to Install
 
-### 1. Clone the Repository
-
-Clone the repository to a local directory of your choice:
+### 1. Clone to a stable location
 
 ```bash
-git clone https://github.com/LabinatorSolutions/kroki-editorial-diagrams.git
-cd kroki-editorial-diagrams
+mkdir -p ~/.repos
+git clone https://github.com/LabinatorSolutions/kroki-editorial-diagrams.git ~/.repos/kroki-editorial-diagrams
 ```
 
-### 2. Install to Google Antigravity IDE
-
-To install this skill in **Google Antigravity IDE**, create a symlink from this repository's skill folder directly to your Antigravity IDE configuration directory:
+### 2. Install the Python dependency
 
 ```bash
-# Create the config skills directory if it doesn't exist
-mkdir -p ~/.gemini/config/skills
+# Arch / Manjaro
+pacman -S python-defusedxml
 
-# Symlink the skill folder
-ln -s "$(pwd)/skills/kroki-editorial-diagrams" ~/.gemini/config/skills/kroki-editorial-diagrams
+# Other distros / macOS
+pip install defusedxml
 ```
 
-### 3. Install to Claude Code
-
-To install in **Claude Code**, symlink the skill folder to the Claude configuration directory:
+### 3. Symlink — Claude Code
 
 ```bash
-# Create the claude skills directory if it doesn't exist
 mkdir -p ~/.claude/skills
+ln -sf ~/.repos/kroki-editorial-diagrams/skills/kroki-editorial-diagrams \
+       ~/.claude/skills/kroki-editorial-diagrams
+```
 
-# Symlink the skill folder
-ln -s "$(pwd)/skills/kroki-editorial-diagrams" ~/.claude/skills/kroki-editorial-diagrams
+### 4. Symlink — Antigravity IDE (Gemini CLI)
+
+```bash
+mkdir -p ~/.gemini/config/skills
+ln -sf ~/.repos/kroki-editorial-diagrams/skills/kroki-editorial-diagrams \
+       ~/.gemini/config/skills/kroki-editorial-diagrams
+```
+
+### 5. Wire into your auto-update script *(optional but recommended)*
+
+If you use a `claude-update-all.sh` script (or similar), add a git-pull block for this repo so it stays current automatically.
+
+Add after your plugin updates, before any bunx section:
+
+```bash
+# Community skills (git-tracked repos)
+log "--- community skill updates ---"
+git -C "$HOME/.repos/kroki-editorial-diagrams" pull --ff-only 2>&1 | tee -a "$LOG" \
+  || log "WARN: kroki-editorial-diagrams update failed"
+```
+
+Because both IDEs resolve the skill through symlinks pointing into `~/.repos/kroki-editorial-diagrams/`, a `git pull` there is instantly visible to both IDEs — no restart or re-symlink needed.
+
+---
+
+## How It Auto-Updates
+
+```text
+git pull (in ~/.repos/kroki-editorial-diagrams)
+    │
+    └─► skills/kroki-editorial-diagrams/ updated
+            │
+            ├─► ~/.claude/skills/kroki-editorial-diagrams  (symlink → live)
+            └─► ~/.gemini/config/skills/kroki-editorial-diagrams  (symlink → live)
+```
+
+Both IDEs pick up changes on the next conversation — no reinstall, no restart.
+
+---
+
+## Running the Tests
+
+```bash
+cd ~/.repos/kroki-editorial-diagrams/skills/kroki-editorial-diagrams/scripts
+python -m pytest tests/ -v
 ```
 
 ---
 
-## How to Update
+## Usage
 
-Since you install via **symbolic links** pointing to your local git clone, updating the skill is trivial and automatic:
+The skill is invoked automatically in Claude Code and Antigravity IDE whenever you ask for a diagram. Example prompts:
 
-1. Navigate back to your cloned repository folder:
+- *"Draw the authentication flow for this service"*
+- *"Create a C4 container diagram for our microservices"*
+- *"Generate an ERD for the users and orders tables"*
+- *"Map the CI/CD pipeline as a flowchart"*
 
-    ```bash
-    cd /path/to/cloned/kroki-editorial-diagrams
-    ```
-
-2. Pull the latest upstream updates:
-
-    ```bash
-    git pull origin main
-    ```
-
-Your IDE (Antigravity or Claude Code) will instantly pick up the updated skill instructions, templates, and Python render scripts without needing re-installation or IDE restarts.
+The skill reads the codebase context, selects the right engine, drafts the DSL, renders via Kroki, and returns an `interactive.html`, `rendered.svg`, and shareable URL.
 
 ---
 
 ## License & Credits
 
-Author: **LabinatorSolutions** (GitHub: [LabinatorSolutions](https://github.com/LabinatorSolutions))
+Author: **LabinatorSolutions** — [Labinator.com](https://labinator.com) · [GitHub](https://github.com/LabinatorSolutions)
 
 Licensed under the GNU General Public License v3.0 (GPLv3). See [LICENSE](LICENSE) for details.

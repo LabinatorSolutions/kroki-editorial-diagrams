@@ -5,6 +5,7 @@
 .DS_Store
 .env
 __pycache__/
+.pytest_cache/
 build/
 dist/
 node_modules/

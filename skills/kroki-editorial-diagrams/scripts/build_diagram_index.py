@@ -55,12 +55,13 @@ def load_artifact_entry(artifact_dir: pathlib.Path) -> dict[str, str] | None:
 
 def build_index_html(entries: list[dict[str, str]], title: str) -> str:
     # Editorial coloring based on design tokens
-    _engine_colors: dict[str, tuple[str, str, str]] = {
-        "plantuml":   ("235, 108, 54",  "#eb6c36", "Full"),
-        "c4plantuml": ("46, 90, 168",   "#2e5aa8", "Full"),
-        "graphviz":   ("79, 93, 117",   "#4f5d75", "Full"),
-        "mermaid":    ("122, 131, 153", "#7a8399", "Best Effort"),
-        "erd":        ("191, 192, 192", "#bfc0c0", "Best Effort"),
+    _engine_colors: dict[str, tuple[str, str]] = {
+        "plantuml":   ("235, 108, 54",  "#eb6c36"),
+        "c4plantuml": ("46, 90, 168",   "#2e5aa8"),
+        "d2":         ("79, 93, 117",   "#4f5d75"),
+        "graphviz":   ("79, 93, 117",   "#4f5d75"),
+        "mermaid":    ("122, 131, 153", "#7a8399"),
+        "erd":        ("191, 192, 192", "#bfc0c0"),
     }
     _default_color = ("235, 108, 54", "#eb6c36")
 
@@ -71,9 +72,7 @@ def build_index_html(entries: list[dict[str, str]], title: str) -> str:
         engine_html  = html.escape(entry["engine"])
         tier         = entry["tier"]
 
-        tool_rgb, tool_hex, _ = _engine_colors.get(
-            entry["engine"], (*_default_color, "Full")
-        )
+        tool_rgb, tool_hex = _engine_colors.get(entry["engine"], _default_color)
 
         interactive_href = html.escape(entry["interactive_href"]) if entry["interactive_exists"] == "true" else ""
         svg_href         = html.escape(entry["svg_href"])
@@ -112,6 +111,7 @@ def build_index_html(entries: list[dict[str, str]], title: str) -> str:
     cards_html = "\n".join(cards)
     page_title = html.escape(title)
     n_entries  = len(entries)
+    plural_s   = "s" if n_entries != 1 else ""
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -342,6 +342,27 @@ def build_index_html(entries: list[dict[str, str]], title: str) -> str:
       .gallery.view-grid {{ grid-template-columns: 1fr; }}
       .gallery.view-list .card-preview {{ display: none; }}
     }}
+
+    @media (prefers-color-scheme: dark) {{
+      :root {{
+        --paper: #2d3142;
+        --paper-2: #393e53;
+        --ink: #f5f5f5;
+        --muted: #bfc0c0;
+        --soft: #8e98ac;
+        --rule: rgba(245, 245, 245, 0.12);
+        --accent: #f08a59;
+        --accent-tint: rgba(240, 138, 89, 0.10);
+        --link: #6a95d8;
+      }}
+      body {{ background: var(--paper); }}
+      .card {{ background: #393e53; }}
+      .card-preview {{ background: #2d3142; }}
+      nav {{ background: rgba(45, 49, 66, 0.85); }}
+      .toolbar {{ background: rgba(57, 62, 83, 0.8); }}
+      .view-toggle {{ background: #2d3142; }}
+      .toggle-indicator {{ background: #393e53; }}
+    }}
   </style>
 </head>
 <body>
@@ -365,7 +386,7 @@ def build_index_html(entries: list[dict[str, str]], title: str) -> str:
       <p>An interactive, premium-designed gallery of system architectures and request flows, rendered via Kroki.</p>
     </header>
     <div class="toolbar">
-      <span class="toolbar-count">{n_entries} diagram{{"s" if n_entries != 1 else ""}}</span>
+      <span class="toolbar-count">{n_entries} diagram{plural_s}</span>
       <div class="view-toggle" id="view-toggle" role="group" aria-label="View mode">
         <div class="toggle-indicator" id="toggle-indicator"></div>
         <button class="toggle-btn" id="btn-grid" type="button" data-view="grid">

@@ -4,6 +4,7 @@ import pathlib
 import re
 import sys
 import xml.etree.ElementTree as ET
+from defusedxml.ElementTree import fromstring as _safe_fromstring
 
 
 SVG_NS = "http://www.w3.org/2000/svg"
@@ -30,7 +31,9 @@ def append_class(element: ET.Element, class_name: str) -> None:
 def soften_svg_background(root: ET.Element) -> None:
     style = root.get("style")
     if style:
-        cleaned = re.sub(r"background\s*:\s*[^;]+;?", "", style, flags=re.IGNORECASE).strip()
+        cleaned = re.sub(
+            r"background\s*:\s*[^;]+;?", "", style, flags=re.IGNORECASE
+        ).strip()
         root.set("style", cleaned)
 
     view_box = root.get("viewBox")
@@ -38,7 +41,9 @@ def soften_svg_background(root: ET.Element) -> None:
         return
 
     try:
-        _, _, width, height = [float(part) for part in view_box.replace(",", " ").split()]
+        _, _, width, height = [
+            float(part) for part in view_box.replace(",", " ").split()
+        ]
     except ValueError:
         return
 
@@ -94,10 +99,9 @@ def soften_svg_background(root: ET.Element) -> None:
         fill = polygon.get("fill", "").lower()
         style_value = polygon.get("style", "")
         has_no_stroke = "stroke:none" in style_value.replace(" ", "").lower()
-        fills_background = (
-            abs(poly_width - width) <= max(6.0, width * 0.03)
-            and abs(poly_height - height) <= max(6.0, height * 0.03)
-        )
+        fills_background = abs(poly_width - width) <= max(6.0, width * 0.03) and abs(
+            poly_height - height
+        ) <= max(6.0, height * 0.03)
 
         if fills_background and (fill or has_no_stroke):
             parent = parent_map.get(polygon)
@@ -156,7 +160,9 @@ def annotate_mermaid(root: ET.Element) -> tuple[int, int]:
         append_class(group, "interactive-node")
         node_count += 1
 
-    edge_candidates = list(root.findall(".//svg:path", NS)) + list(root.findall(".//svg:g", NS))
+    edge_candidates = list(root.findall(".//svg:path", NS)) + list(
+        root.findall(".//svg:g", NS)
+    )
     for element in edge_candidates:
         classes = set((element.get("class") or "").split())
         if "flowchart-link" not in classes:
@@ -245,13 +251,21 @@ def annotate_plantuml_description(root: ET.Element) -> tuple[int, int]:
     return node_count, edge_count
 
 
+def annotate_d2(root: ET.Element) -> tuple[int, int]:
+    """D2 SVG output uses the same class='node'/'edge' conventions as Graphviz."""
+    return annotate_graphviz_like(root)
+
+
 def annotate_svg(engine: str, svg_text: str) -> tuple[str, dict[str, str | int]]:
     cleaned = clean_svg_text(svg_text)
-    root = ET.fromstring(cleaned)
+    root = _safe_fromstring(cleaned)
     soften_svg_background(root)
 
     if engine == "graphviz":
         node_count, edge_count = annotate_graphviz_like(root)
+        tier = "full" if edge_count else "best-effort"
+    elif engine == "d2":
+        node_count, edge_count = annotate_d2(root)
         tier = "full" if edge_count else "best-effort"
     elif engine == "erd":
         node_count, edge_count = annotate_graphviz_like(root)
@@ -280,7 +294,9 @@ def annotate_svg(engine: str, svg_text: str) -> tuple[str, dict[str, str | int]]
     }
 
 
-def build_html_document(svg_markup: str, title: str, metadata: dict[str, str | int]) -> str:
+def build_html_document(
+    svg_markup: str, title: str, metadata: dict[str, str | int]
+) -> str:
     engine = metadata["engine"]
     tier = metadata["tier"]
     nodes = metadata["nodes"]
@@ -288,11 +304,12 @@ def build_html_document(svg_markup: str, title: str, metadata: dict[str, str | i
 
     # Editorial colors matching the design system
     _engine_colors = {
-        "plantuml":   ("235, 108, 54",  "#eb6c36"),  # Tangerine accent
-        "c4plantuml": ("46, 90, 168",   "#2e5aa8"),  # Link blue
-        "graphviz":   ("79, 93, 117",   "#4f5d75"),  # Slate blue
-        "mermaid":    ("122, 131, 153", "#7a8399"),  # Muted slate
-        "erd":        ("191, 192, 192", "#bfc0c0"),  # Silver
+        "plantuml": ("235, 108, 54", "#eb6c36"),  # Tangerine accent
+        "c4plantuml": ("46, 90, 168", "#2e5aa8"),  # Link blue
+        "d2": ("79, 93, 117", "#4f5d75"),  # Slate blue (structural)
+        "graphviz": ("79, 93, 117", "#4f5d75"),  # Slate blue
+        "mermaid": ("122, 131, 153", "#7a8399"),  # Muted slate
+        "erd": ("191, 192, 192", "#bfc0c0"),  # Silver
     }
     _tool_rgb, _tool_hex = _engine_colors.get(engine, ("235, 108, 54", "#eb6c36"))
 
@@ -605,6 +622,25 @@ def build_html_document(svg_markup: str, title: str, metadata: dict[str, str | i
       .canvas-viewport {{ height: calc(100vh - 74px); }}
       .canvas-status {{ left: 10px; bottom: 10px; }}
     }}
+
+    @media (prefers-color-scheme: dark) {{
+      :root {{
+        --paper: #2d3142;
+        --paper-2: #393e53;
+        --ink: #f5f5f5;
+        --muted: #bfc0c0;
+        --soft: #8e98ac;
+        --rule: rgba(245, 245, 245, 0.12);
+        --accent: #f08a59;
+        --accent-tint: rgba(240, 138, 89, 0.10);
+        --link: #6a95d8;
+        --dim-opacity: 0.22;
+        --node-shadow: drop-shadow(0 0 10px rgba(240, 138, 89, 0.3));
+        --focus-ring: rgba(240, 138, 89, 0.4);
+      }}
+      .canvas-toolbar button {{ background: #393e53; }}
+      .canvas-content svg {{ background: transparent !important; }}
+    }}
   </style>
 </head>
 <body>
@@ -821,7 +857,6 @@ def build_html_document(svg_markup: str, title: str, metadata: dict[str, str | i
       }};
 
       const focusNode = (nodeId) => {{
-        selectedNodeId = nodeId;
         resetState();
         selectedNodeId = nodeId;
 
@@ -1009,7 +1044,9 @@ def build_html_document(svg_markup: str, title: str, metadata: dict[str, str | i
 """
 
 
-def build_interactive_html_file(engine: str, svg_text: str, output_path: pathlib.Path, title: str) -> dict[str, str | int]:
+def build_interactive_html_file(
+    engine: str, svg_text: str, output_path: pathlib.Path, title: str
+) -> dict[str, str | int]:
     annotated_svg, metadata = annotate_svg(engine=engine, svg_text=svg_text)
     html = build_html_document(svg_markup=annotated_svg, title=title, metadata=metadata)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1018,10 +1055,16 @@ def build_interactive_html_file(engine: str, svg_text: str, output_path: pathlib
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Wrap a Kroki SVG in an interactive HTML viewer.")
-    parser.add_argument("--engine", required=True, help="Kroki engine used to render the SVG.")
+    parser = argparse.ArgumentParser(
+        description="Wrap a Kroki SVG in an interactive HTML viewer."
+    )
+    parser.add_argument(
+        "--engine", required=True, help="Kroki engine used to render the SVG."
+    )
     parser.add_argument("--input", required=True, help="Path to the rendered SVG file.")
-    parser.add_argument("--output", required=True, help="Path to write the interactive HTML.")
+    parser.add_argument(
+        "--output", required=True, help="Path to write the interactive HTML."
+    )
     parser.add_argument("--title", help="Viewer title. Defaults to the SVG stem.")
     args = parser.parse_args()
 
@@ -1037,7 +1080,7 @@ def main() -> int:
             output_path=output_path,
             title=title,
         )
-    except ET.ParseError as exc:
+    except (ET.ParseError, ValueError, KeyError, UnicodeDecodeError) as exc:
         print(f"Interactive build failed: {exc}", file=sys.stderr)
         return 1
 

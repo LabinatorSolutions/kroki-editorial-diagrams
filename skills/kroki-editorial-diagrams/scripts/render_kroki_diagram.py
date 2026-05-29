@@ -15,6 +15,7 @@ from build_interactive_kroki_html import build_interactive_html_file
 SUPPORTED_ENGINES = [
     "plantuml",
     "c4plantuml",
+    "d2",
     "mermaid",
     "graphviz",
     "bpmn",
@@ -34,6 +35,9 @@ def render(engine: str, fmt: str, source: str) -> bytes:
         [
             "curl",
             "-sS",
+            "-f",
+            "--max-time",
+            "30",
             "-X",
             "POST",
             f"https://kroki.io/{engine}/{fmt}",

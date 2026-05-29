@@ -27,8 +27,8 @@ classes: {
 grid.style.stroke: "rgba(45, 49, 66, 0.12)"
 grid.style.fill: "#f5f5f5"
 
-# Nodes default styling
-*.style.font: "sans-serif"
+# Nodes default styling (D2 uses font-color and font-size, not font)
+*.style.font-color: "#2d3142"
 *.style.font-size: 13
 *.style.fill: "#ffffff"
 *.style.stroke: "#2d3142"
@@ -44,6 +44,8 @@ grid.style.fill: "#f5f5f5"
 ## 2. PlantUML (Minimal Editorial Theme)
 
 Wrap your PlantUML code with this style block to enforce the warm paper background, jet black ink, and sans-serif node typography.
+
+> **Kroki version note**: The `<style>` block below requires PlantUML ≥ 1.2020.x (supported on Kroki ≥ 0.19). If you target an older self-hosted Kroki instance, replace the `<style>` block with equivalent `skinparam` directives (e.g. `skinparam BackgroundColor #f5f5f5`, `skinparam ArrowColor #4f5d75`).
 
 ```plantuml
 @startuml
