@@ -1,0 +1,19 @@
+# Git ignore rules for Kroki Editorial Diagrams
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+node_modules/
+dist/
+build/
+.env
+
+# Generated diagram artifacts (rendered by users)
+diagrams/
+docs/diagrams/
+index.html
+**/interactive.html
+**/rendered.svg
+**/rendered.png
+**/rendered.pdf
+**/.diagram-meta.json

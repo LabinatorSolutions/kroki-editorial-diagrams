@@ -1,0 +1,24 @@
+{
+  "name": "kroki-editorial-diagrams",
+  "version": "1.0.0",
+  "description": "Unified Claude Code skill for creating beautiful, premium, interactive diagrams using Kroki with an editorial aesthetic.",
+  "main": "skills/kroki-editorial-diagrams/SKILL.md",
+  "scripts": {
+    "render": "python3 skills/kroki-editorial-diagrams/scripts/render_kroki_diagram.py",
+    "index": "python3 skills/kroki-editorial-diagrams/scripts/build_diagram_index.py"
+  },
+  "keywords": [
+    "claude-code",
+    "skill",
+    "diagrams",
+    "kroki",
+    "editorial-design",
+    "plantuml",
+    "mermaid",
+    "d2",
+    "graphviz"
+  ],
+  "author": "LabinatorSolutions",
+  "license": "GPL-3.0-only",
+  "dependencies": {}
+}
