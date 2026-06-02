@@ -16,14 +16,14 @@ python -m pytest skills/kroki-editorial-diagrams/scripts/tests/ -v
 
 ## What Lives Where
 
-| Path | Purpose |
-| ---- | ------- |
-| `skills/kroki-editorial-diagrams/SKILL.md` | LLM instruction set — workflow, engine table, design rules, execution commands |
-| `skills/kroki-editorial-diagrams/references/` | Reference docs loaded by the agent at runtime |
-| `skills/kroki-editorial-diagrams/scripts/render_kroki_diagram.py` | Kroki API caller, URL builder, metadata writer |
-| `skills/kroki-editorial-diagrams/scripts/build_interactive_kroki_html.py` | SVG annotator + interactive HTML wrapper |
-| `skills/kroki-editorial-diagrams/scripts/build_diagram_index.py` | Gallery index generator |
-| `skills/kroki-editorial-diagrams/scripts/tests/` | pytest suite |
+| Path                                                                      | Purpose                                                                        |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `skills/kroki-editorial-diagrams/SKILL.md`                                | LLM instruction set — workflow, engine table, design rules, execution commands |
+| `skills/kroki-editorial-diagrams/references/`                             | Reference docs loaded by the agent at runtime                                  |
+| `skills/kroki-editorial-diagrams/scripts/render_kroki_diagram.py`         | Kroki API caller, URL builder, metadata writer                                 |
+| `skills/kroki-editorial-diagrams/scripts/build_interactive_kroki_html.py` | SVG annotator + interactive HTML wrapper                                       |
+| `skills/kroki-editorial-diagrams/scripts/build_diagram_index.py`          | Gallery index generator                                                        |
+| `skills/kroki-editorial-diagrams/scripts/tests/`                          | pytest suite                                                                   |
 
 ## Adding a New Engine
 
@@ -37,6 +37,7 @@ python -m pytest skills/kroki-editorial-diagrams/scripts/tests/ -v
 ## Changing Design Tokens
 
 Edit `references/style-guide.md` first, then propagate to:
+
 - Both HTML template generators (`build_interactive_kroki_html.py`, `build_diagram_index.py`) — both light and dark mode CSS blocks.
 - Engine style templates in `references/engine-style-templates.md`.
 

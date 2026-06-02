@@ -1,6 +1,6 @@
 {
   "name": "kroki-editorial-diagrams",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Unified Claude Code skill for creating beautiful, premium, interactive diagrams using Kroki with an editorial aesthetic.",
   "main": "skills/kroki-editorial-diagrams/SKILL.md",
   "scripts": {

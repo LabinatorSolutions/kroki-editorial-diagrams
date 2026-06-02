@@ -12,12 +12,12 @@ Maintained by [Labinator.com](https://labinator.com).
 
 1. **Editorial Theme Out-of-the-Box** — Warm paper `#f5f5f5`, ink `#2d3142`, slate `#4f5d75`, rust-accent `#eb6c36`. Geist Sans/Mono + Instrument Serif typography. Dark-mode support via `prefers-color-scheme`.
 2. **Engine Independence** — Auto-selects D2, PlantUML, C4, Mermaid, Graphviz, ERD, or BPMN based on semantic use case. All engines are wired end-to-end.
-3. **Interactive SVG Viewer** — Click-to-highlight node focus, animated edge flow, dimmed inactive elements, pan/zoom with keyboard shortcuts. Full interactivity on D2, PlantUML, and Graphviz; best-effort on Mermaid and ERD.
+3. **Interactive SVG Viewer** — Click-to-highlight node focus, animated edge flow, dimmed inactive elements, pan/zoom with keyboard shortcuts. Full interactivity on D2, PlantUML, C4-PlantUML, and Graphviz; best-effort on Mermaid and ERD; limited on BPMN.
 4. **Automated Gallery Index** — Generates a `index.html` card-deck from all diagrams in a folder, with grid/list toggle and per-engine color coding.
 5. **Narrow & Tall Layout Standard** — Max ~800px width, vertical flows enforced across all engines to prevent horizontal scrolling.
 6. **Robust Error Handling** — `curl -f` detects HTTP 4xx/5xx from Kroki. 30-second timeout. Shareable Kroki URL printed on failure for manual debugging.
 7. **Secure SVG Parsing** — Uses `defusedxml` to prevent XXE injection when wrapping SVG files in the interactive viewer.
-8. **Test Suite** — 10 pytest tests covering engine registration, URL encoding, pluralization, SVG annotation, and HTML generation.
+8. **Test Suite** — 19 pytest tests covering engine registration, URL encoding, pluralization, SVG annotation, edge label parsing, sequence/Mermaid annotation, engine inference from source files, and HTML generation.
 
 ---
 
@@ -40,7 +40,6 @@ Maintained by [Labinator.com](https://labinator.com).
 ```text
 kroki-editorial-diagrams/
 ├── README.md
-├── CHANGELOG.md
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── package.json
@@ -49,6 +48,12 @@ kroki-editorial-diagrams/
 │   └── ISSUE_TEMPLATE/
 │       ├── bug_report.md
 │       └── feature_request.md
+├── docs/
+│   └── examples/                          # Sample rendered diagrams
+│       ├── architecture-d2/               # D2 system architecture example
+│       ├── erd-schema/                    # ERD database schema example
+│       ├── flowchart-mermaid/             # Mermaid flowchart example
+│       └── sequence-plantuml/             # PlantUML sequence diagram example
 └── skills/
     └── kroki-editorial-diagrams/
         ├── SKILL.md                       # Main LLM instruction set

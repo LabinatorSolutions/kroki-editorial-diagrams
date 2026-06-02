@@ -187,8 +187,29 @@ digraph G {
 }
 ```
 
+## 6. BPMN (Business Process)
 
-## 6. ERD (Database Schema)
+BPMN diagrams rendered via Kroki use a fixed renderer with no styling API. Design tokens cannot be applied.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="process1" isExecutable="false">
+    <startEvent id="start"/>
+    <task id="task1" name="Task Name"/>
+    <endEvent id="end"/>
+    <sequenceFlow id="flow1" sourceRef="start" targetRef="task1"/>
+    <sequenceFlow id="flow2" sourceRef="task1" targetRef="end"/>
+  </process>
+</definitions>
+```
+
+> **No styling available**: Use BPMN only when the audience requires standard BPMN notation for compliance or handoff. For internal process documentation, prefer `mermaid` flowcharts or `plantuml` activity diagrams which support the full editorial theme.
+
+---
+
+## 7. ERD (Database Schema)
 
 ERD diagrams have limited styling options but you can control table and relationship appearance:
 

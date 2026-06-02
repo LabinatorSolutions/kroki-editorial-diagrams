@@ -25,6 +25,8 @@ diagrams/<slug>/
 
 The parent path (`diagrams/` or `docs/diagrams/`) will also automatically contain a unified `index.html` page to list and search all generated diagrams.
 
+> **Index auto-build trigger**: The gallery `index.html` is rebuilt automatically only when the output file is named exactly `rendered.svg`. Outputs with any other filename (e.g. `diagram.svg`) skip index generation. Use `--skip-index` to suppress the rebuild explicitly when running multiple renders in a batch.
+
 ---
 
 ## 2. File Naming Conventions (Slug rules)

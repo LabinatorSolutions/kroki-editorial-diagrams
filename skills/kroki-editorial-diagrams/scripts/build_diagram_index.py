@@ -18,6 +18,7 @@ _SOURCE_SUFFIX_MAP: dict[str, str] = {
     ".dot": "graphviz",
     ".erd": "erd",
     ".d2": "d2",
+    ".bpmn": "bpmn",
 }
 
 
@@ -84,6 +85,8 @@ def build_index_html(entries: list[dict[str, str]], title: str) -> str:
 
         if tier == "full":
             badge = '<span class="pill badge-full">Interactive</span>'
+        elif tier == "best-effort":
+            badge = '<span class="pill badge-best">Interactive (limited)</span>'
         else:
             badge = '<span class="pill badge-best">Static SVG</span>'
 

@@ -298,9 +298,6 @@ def build_html_document(
     svg_markup: str, title: str, metadata: dict[str, str | int]
 ) -> str:
     engine = metadata["engine"]
-    tier = metadata["tier"]
-    nodes = metadata["nodes"]
-    edges = metadata["edges"]
 
     # Editorial colors matching the design system
     _engine_colors = {

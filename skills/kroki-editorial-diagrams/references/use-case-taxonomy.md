@@ -36,6 +36,24 @@ Identify your diagramming intent and map it to the recommended engine family.
 * **Ideal Family**: State Diagram.
 * **Preferred Engine**: `plantuml` or `mermaid`.
 
+### OOP Hierarchy & Class Structure
+
+* **Intent**: Represent object-oriented class hierarchies, inheritance chains, interfaces, and static relationships.
+* **Ideal Family**: Class Diagram.
+* **Preferred Engine**: `plantuml`.
+
+### Gantt & Timeline
+
+* **Intent**: Display schedules, milestones, parallel task tracks, or feature delivery timelines.
+* **Ideal Family**: Gantt / Timeline.
+* **Preferred Engine**: `mermaid`.
+
+### Mind Map & Topic Breakdown
+
+* **Intent**: Explore concept hierarchies, brainstorming branches, or document feature taxonomies.
+* **Ideal Family**: Mind Map.
+* **Preferred Engine**: `plantuml`.
+
 ### Business Process & Workflow Compliance
 
 * **Intent**: Model formal business processes with swimlanes, BPMN events, gateways, and tasks for compliance or handoff documentation.

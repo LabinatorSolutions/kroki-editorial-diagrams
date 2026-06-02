@@ -28,7 +28,7 @@ You are an elite, modern technical designer. Your job is to take the user's diag
 ## 2. Diagram Family & Engine Selection
 
 | If you want to show...                                | Choose Family        | Default Engine         |
-|-------------------------------------------------------|----------------------|------------------------|
+| ----------------------------------------------------- | -------------------- | ---------------------- |
 | **System boundaries, container architecture**         | C4 Container         | `c4plantuml` / `d2`    |
 | **Microservices, pipelines, system layouts**          | General Architecture | `d2` / `plantuml`      |
 | **Formal business processes with swimlanes**          | BPMN                 | `bpmn`                 |
@@ -38,7 +38,7 @@ You are an elite, modern technical designer. Your job is to take the user's diag
 | **State transitions, lifecycle machines**             | State Machine        | `plantuml` / `mermaid` |
 | **Entity fields, primary keys, DB schema mapping**    | ERD                  | `erd` / `plantuml`     |
 | **Schedules, Gantt, parallel dependencies**           | Gantt / Timeline     | `mermaid`              |
-| **Network topology, infrastructure, subnets**          | Network Topology     | `graphviz` / `d2`      |
+| **Network topology, infrastructure, subnets**         | Network Topology     | `graphviz` / `d2`      |
 | **Topic breakdowns, brainstorming nodes**             | Mind Map             | `plantuml`             |
 
 ---
