@@ -279,6 +279,10 @@ def annotate_svg(engine: str, svg_text: str) -> tuple[str, dict[str, str | int]]
     elif engine in {"plantuml", "c4plantuml"}:
         node_count, edge_count = annotate_plantuml_description(root)
         tier = "full" if edge_count else "best-effort"
+    elif engine == "structurizr":
+        # Structurizr emits Graphviz-compatible node/edge groups; attempt full annotation.
+        node_count, edge_count = annotate_graphviz_like(root)
+        tier = "full" if edge_count else "best-effort"
     else:
         node_count = 0
         edge_count = 0

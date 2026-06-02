@@ -13,6 +13,7 @@ from build_diagram_index import META_FILENAME, build_diagram_index
 from build_interactive_kroki_html import build_interactive_html_file
 
 SUPPORTED_ENGINES = [
+    # Core editorial engines (full styling + interactive support)
     "plantuml",
     "c4plantuml",
     "d2",
@@ -20,6 +21,29 @@ SUPPORTED_ENGINES = [
     "graphviz",
     "bpmn",
     "erd",
+    # Extended engines (built-in to Kroki gateway)
+    "structurizr",
+    "ditaa",
+    "nomnoml",
+    "svgbob",
+    "pikchr",
+    "goat",
+    "bytefield",
+    "wavedrom",
+    "wireviz",
+    "actdiag",
+    "blockdiag",
+    "seqdiag",
+    "nwdiag",
+    "packetdiag",
+    "rackdiag",
+    "symbolator",
+    "umlet",
+    # Companion-server engines (require separate Docker container in self-hosted Kroki)
+    "excalidraw",
+    "diagramsnet",
+    "vega",
+    "vegalite",
 ]
 
 
@@ -30,22 +54,37 @@ def build_kroki_url(engine: str, fmt: str, source: str, endpoint: str = "https:/
     return f"{endpoint}/{engine}/{fmt}/{encoded}"
 
 
-def render(engine: str, fmt: str, source: str, endpoint: str = "https://kroki.io") -> bytes:
+def render(
+    engine: str,
+    fmt: str,
+    source: str,
+    endpoint: str = "https://kroki.io",
+    diagram_options: list[tuple[str, str]] | None = None,
+    timeout: int = 30,
+) -> bytes:
+    cmd = [
+        "curl",
+        "-sS",
+        "-f",
+        "--max-time",
+        str(timeout),
+        "-X",
+        "POST",
+        f"{endpoint}/{engine}/{fmt}",
+        "-H",
+        "Content-Type: text/plain; charset=utf-8",
+    ]
+    for key, value in (diagram_options or []):
+        # Capitalise each word of the key to match Kroki header convention:
+        # e.g. "no-metadata" → "Kroki-Diagram-Options-No-Metadata"
+        header_key = "Kroki-Diagram-Options-" + "-".join(
+            word.capitalize() for word in key.replace("_", "-").split("-")
+        )
+        cmd += ["-H", f"{header_key}: {value}"]
+    cmd += ["--data-binary", "@-"]
+
     result = subprocess.run(
-        [
-            "curl",
-            "-sS",
-            "-f",
-            "--max-time",
-            "30",
-            "-X",
-            "POST",
-            f"{endpoint}/{engine}/{fmt}",
-            "-H",
-            "Content-Type: text/plain; charset=utf-8",
-            "--data-binary",
-            "@-",
-        ],
+        cmd,
         input=source.encode("utf-8"),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -71,7 +110,7 @@ def main() -> int:
     parser.add_argument(
         "--format",
         default="svg",
-        choices=["svg", "png", "pdf"],
+        choices=["svg", "png", "pdf", "jpg"],
         help="Output format.",
     )
     parser.add_argument(
@@ -105,7 +144,33 @@ def main() -> int:
         default="https://kroki.io",
         help="Custom Kroki server endpoint (for self-hosted instances).",
     )
+    parser.add_argument(
+        "--diagram-option",
+        action="append",
+        metavar="KEY=VALUE",
+        dest="diagram_options",
+        help=(
+            "Pass a diagram option to Kroki (repeatable). "
+            "Sent as a Kroki-Diagram-Options-* HTTP header. "
+            "Example: --diagram-option theme=earth-tones"
+        ),
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=30,
+        help="curl --max-time value in seconds (default: 30). Increase for slow self-hosted instances.",
+    )
     args = parser.parse_args()
+
+    # Parse --diagram-option KEY=VALUE pairs
+    diagram_options: list[tuple[str, str]] = []
+    for opt in args.diagram_options or []:
+        if "=" not in opt:
+            print(f"Invalid --diagram-option '{opt}': expected KEY=VALUE format", file=sys.stderr)
+            return 1
+        key, _, value = opt.partition("=")
+        diagram_options.append((key.strip(), value.strip()))
 
     input_path = pathlib.Path(args.input)
     source = input_path.read_text(encoding="utf-8")
@@ -118,13 +183,21 @@ def main() -> int:
     output_path = pathlib.Path(args.output) if args.output else input_path.with_suffix(f".{args.format}")
 
     try:
-        rendered = render(args.engine, args.format, source, endpoint=args.kroki_endpoint)
+        rendered = render(
+            args.engine,
+            args.format,
+            source,
+            endpoint=args.kroki_endpoint,
+            diagram_options=diagram_options,
+            timeout=args.timeout,
+        )
     except RuntimeError as exc:
         print(f"Render failed: {exc}", file=sys.stderr)
         print(f"Kroki URL: {url}", file=sys.stderr)
         return 1
 
-    text_probe = rendered[:2048].decode("utf-8", errors="ignore")
+    # Scan up to 4096 bytes for the SVG tag to handle large XML preambles safely
+    text_probe = rendered[:4096].decode("utf-8", errors="ignore")
     if "<svg" not in text_probe and args.format == "svg":
         print("Render failed: Kroki did not return SVG output", file=sys.stderr)
         print(text_probe.strip(), file=sys.stderr)

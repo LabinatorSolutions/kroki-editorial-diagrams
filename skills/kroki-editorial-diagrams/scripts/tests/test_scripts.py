@@ -2,15 +2,17 @@
 import base64
 import pathlib
 import zlib
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 import sys
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
-from render_kroki_diagram import SUPPORTED_ENGINES, build_kroki_url
+from render_kroki_diagram import SUPPORTED_ENGINES, build_kroki_url, render
 from build_diagram_index import build_index_html, build_diagram_index, META_FILENAME, infer_engine_from_source
-from build_interactive_kroki_html import annotate_svg, build_interactive_html_file
+from build_interactive_kroki_html import annotate_svg, build_interactive_html_file, soften_svg_background
+from defusedxml.ElementTree import fromstring as safe_fromstring
 
 
 # ---------------------------------------------------------------------------
@@ -235,3 +237,165 @@ def test_infer_engine_detects_erd_source(tmp_path):
 
 def test_infer_engine_defaults_when_no_source(tmp_path):
     assert infer_engine_from_source(tmp_path) == "diagram"
+
+
+# ---------------------------------------------------------------------------
+# render_kroki_diagram — new format + engine coverage
+# ---------------------------------------------------------------------------
+
+def test_jpg_format_builds_valid_url():
+    url = build_kroki_url("mermaid", "jpg", "flowchart TD\n  A --> B")
+    assert "/mermaid/jpg/" in url
+
+
+def test_extended_engines_present():
+    extended = {"structurizr", "ditaa", "nomnoml", "svgbob", "wavedrom", "vega", "vegalite", "excalidraw"}
+    assert extended.issubset(set(SUPPORTED_ENGINES))
+
+
+def test_diagram_option_curl_headers():
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+    mock_result.stderr = b""
+
+    with patch("subprocess.run", return_value=mock_result) as mock_run:
+        render(
+            "d2", "svg", "direction: down",
+            diagram_options=[("theme", "earth-tones"), ("layout", "elk")],
+        )
+        cmd = mock_run.call_args[0][0]
+        assert "Kroki-Diagram-Options-Theme: earth-tones" in cmd
+        assert "Kroki-Diagram-Options-Layout: elk" in cmd
+
+
+def test_diagram_option_no_options_produces_no_extra_headers():
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+    mock_result.stderr = b""
+
+    with patch("subprocess.run", return_value=mock_result) as mock_run:
+        render("graphviz", "svg", "digraph G {}")
+        cmd = mock_run.call_args[0][0]
+        assert not any("Kroki-Diagram-Options" in arg for arg in cmd)
+
+
+def test_timeout_is_passed_to_curl():
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+    mock_result.stderr = b""
+
+    with patch("subprocess.run", return_value=mock_result) as mock_run:
+        render("plantuml", "svg", "@startuml\n@enduml", timeout=90)
+        cmd = mock_run.call_args[0][0]
+        idx = cmd.index("--max-time")
+        assert cmd[idx + 1] == "90"
+
+
+# ---------------------------------------------------------------------------
+# build_diagram_index — new engine inference extensions
+# ---------------------------------------------------------------------------
+
+def test_infer_engine_detects_c4puml_source(tmp_path):
+    (tmp_path / "source.c4puml").write_text("!include <C4Container>")
+    assert infer_engine_from_source(tmp_path) == "c4plantuml"
+
+
+def test_infer_engine_detects_structurizr_source(tmp_path):
+    (tmp_path / "source.structurizr").write_text("workspace {}")
+    assert infer_engine_from_source(tmp_path) == "structurizr"
+
+
+def test_infer_engine_detects_wavedrom_source(tmp_path):
+    (tmp_path / "source.wsd").write_text('{"signal":[]}')
+    assert infer_engine_from_source(tmp_path) == "wavedrom"
+
+
+def test_infer_engine_detects_vega_source(tmp_path):
+    (tmp_path / "source.vega").write_text('{"$schema":""}')
+    assert infer_engine_from_source(tmp_path) == "vega"
+
+
+def test_infer_engine_detects_svgbob_source(tmp_path):
+    (tmp_path / "source.svgbob").write_text(".--.")
+    assert infer_engine_from_source(tmp_path) == "svgbob"
+
+
+def test_infer_engine_detects_plantuml_pu_extension(tmp_path):
+    (tmp_path / "source.pu").write_text("@startuml")
+    assert infer_engine_from_source(tmp_path) == "plantuml"
+
+
+# ---------------------------------------------------------------------------
+# build_interactive_kroki_html — ERD and BPMN paths
+# ---------------------------------------------------------------------------
+
+ERD_SVG = """\
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200">
+  <g id="node1" class="node"><title>users</title><polygon/><text>users</text></g>
+  <g id="node2" class="node"><title>posts</title><polygon/><text>posts</text></g>
+  <g id="edge1" class="edge"><title>users-&gt;posts</title><path/></g>
+</svg>"""
+
+BPMN_SVG = """\
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+  <g class="djs-group">
+    <circle class="djs-element" cx="50" cy="100" r="18"/>
+  </g>
+</svg>"""
+
+
+def test_annotate_erd_uses_graphviz_path():
+    _, meta = annotate_svg("erd", ERD_SVG)
+    assert meta["nodes"] == 2
+    assert meta["edges"] == 1
+    assert meta["tier"] == "best-effort"
+
+
+def test_annotate_bpmn_is_limited():
+    _, meta = annotate_svg("bpmn", BPMN_SVG)
+    assert meta["tier"] == "limited"
+    assert meta["nodes"] == 0
+    assert meta["edges"] == 0
+
+
+# ---------------------------------------------------------------------------
+# build_interactive_kroki_html — soften_svg_background
+# ---------------------------------------------------------------------------
+
+def _make_svg_with_bg_rect(width: int = 200, height: int = 200) -> str:
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">'
+        f'<rect x="0" y="0" width="{width}" height="{height}" fill="#ffffff" style="stroke:none"/>'
+        f'<g class="node"><title>A</title></g>'
+        f"</svg>"
+    )
+
+
+def test_soften_svg_background_removes_background_rect():
+    svg_text = _make_svg_with_bg_rect(200, 200)
+    root = safe_fromstring(svg_text)
+    rects_before = root.findall(".//{http://www.w3.org/2000/svg}rect")
+    assert len(rects_before) == 1
+
+    soften_svg_background(root)
+
+    rects_after = root.findall(".//{http://www.w3.org/2000/svg}rect")
+    assert len(rects_after) == 0
+
+
+def test_soften_svg_background_preserves_non_background_rects():
+    svg_text = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">'
+        '<rect x="0" y="0" width="200" height="200" fill="#ffffff" style="stroke:none"/>'
+        '<rect x="10" y="10" width="50" height="30" fill="#ececec"/>'
+        "</svg>"
+    )
+    root = safe_fromstring(svg_text)
+    soften_svg_background(root)
+    rects_after = root.findall(".//{http://www.w3.org/2000/svg}rect")
+    # Background rect removed; content rect kept
+    assert len(rects_after) == 1
+    assert rects_after[0].get("x") == "10"

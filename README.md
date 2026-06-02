@@ -11,27 +11,50 @@ Maintained by [Labinator.com](https://labinator.com).
 ## Key Features
 
 1. **Editorial Theme Out-of-the-Box** — Warm paper `#f5f5f5`, ink `#2d3142`, slate `#4f5d75`, rust-accent `#eb6c36`. Geist Sans/Mono + Instrument Serif typography. Dark-mode support via `prefers-color-scheme`.
-2. **Engine Independence** — Auto-selects D2, PlantUML, C4, Mermaid, Graphviz, ERD, or BPMN based on semantic use case. All engines are wired end-to-end.
-3. **Interactive SVG Viewer** — Click-to-highlight node focus, animated edge flow, dimmed inactive elements, pan/zoom with keyboard shortcuts. Full interactivity on D2, PlantUML, C4-PlantUML, and Graphviz; best-effort on Mermaid and ERD; limited on BPMN.
-4. **Automated Gallery Index** — Generates a `index.html` card-deck from all diagrams in a folder, with grid/list toggle and per-engine color coding.
-5. **Narrow & Tall Layout Standard** — Max ~800px width, vertical flows enforced across all engines to prevent horizontal scrolling.
-6. **Robust Error Handling** — `curl -f` detects HTTP 4xx/5xx from Kroki. 30-second timeout. Shareable Kroki URL printed on failure for manual debugging.
-7. **Secure SVG Parsing** — Uses `defusedxml` to prevent XXE injection when wrapping SVG files in the interactive viewer.
-8. **Test Suite** — 19 pytest tests covering engine registration, URL encoding, pluralization, SVG annotation, edge label parsing, sequence/Mermaid annotation, engine inference from source files, and HTML generation.
+2. **Engine Independence** — Auto-selects D2, PlantUML, C4, Structurizr, Mermaid, Graphviz, ERD, BPMN, WaveDrom, Vega-Lite, Nomnoml, Ditaa, SvgBob, Excalidraw, and more based on semantic use case. All engines are wired end-to-end.
+3. **Diagram Options** — Pass engine-specific Kroki options via `--diagram-option key=value` (e.g. D2 theme, layout, sketch mode; PlantUML theme).
+4. **Interactive SVG Viewer** — Click-to-highlight node focus, animated edge flow, dimmed inactive elements, pan/zoom with keyboard shortcuts. Full interactivity on D2, PlantUML, C4-PlantUML, Graphviz, and Structurizr; best-effort on Mermaid and ERD; limited/pan-zoom on all others.
+5. **Automated Gallery Index** — Generates a `index.html` card-deck from all diagrams in a folder, with grid/list toggle and per-engine color coding.
+6. **Narrow & Tall Layout Standard** — Max ~800px width, vertical flows enforced across all engines to prevent horizontal scrolling.
+7. **Robust Error Handling** — `curl -f` detects HTTP 4xx/5xx from Kroki. Configurable timeout (`--timeout`). Shareable Kroki URL printed on failure for manual debugging.
+8. **Secure SVG Parsing** — Uses `defusedxml` to prevent XXE injection when wrapping SVG files in the interactive viewer.
+9. **Test Suite** — 36 pytest tests covering engine registration, URL encoding, pluralization, SVG annotation, edge label parsing, sequence/Mermaid/ERD/BPMN annotation, engine inference from source files, diagram options curl headers, background rect removal, and HTML generation.
 
 ---
 
 ## Supported Engines
 
-| Engine       | Best For                                  | SVG | PNG | PDF |
-| ------------ | ----------------------------------------- | --- | --- | --- |
-| `plantuml`   | Sequences, class diagrams, state machines | Yes | Yes | Yes |
-| `c4plantuml` | C4 container/context architecture         | Yes | Yes | Yes |
-| `d2`         | Modern system architecture, cloud layouts | Yes | —   | —   |
-| `mermaid`    | Flowcharts, timelines, Git graphs         | Yes | Yes | Yes |
-| `graphviz`   | Complex DAGs, dependency graphs           | Yes | Yes | Yes |
-| `erd`        | Database entity-relationship diagrams     | Yes | Yes | —   |
-| `bpmn`       | Business process / workflow compliance    | Yes | Yes | —   |
+### Core Editorial Engines (full styling + interactive support)
+
+| Engine | Best For | SVG | PNG | PDF | JPG | Companion Server |
+| --- | --- | --- | --- | --- | --- | --- |
+| `plantuml` | Sequences, class diagrams, state machines | Yes | Yes | Yes | — | — |
+| `c4plantuml` | C4 container/context architecture | Yes | Yes | Yes | — | — |
+| `structurizr` | C4 via native DSL (no stdlib include) | Yes | Yes | — | — | — |
+| `d2` | Modern system architecture, cloud layouts | Yes | Yes | — | — | — |
+| `mermaid` | Flowcharts, timelines, Git graphs | Yes | Yes | Yes | — | Yes |
+| `graphviz` | Complex DAGs, dependency graphs | Yes | Yes | Yes | — | — |
+| `erd` | Database entity-relationship diagrams | Yes | Yes | — | — | — |
+| `bpmn` | Business process / workflow compliance | Yes | Yes | — | — | Yes |
+
+### Extended Engines
+
+| Engine | Best For | SVG | PNG | Companion Server |
+| --- | --- | --- | --- | --- |
+| `nomnoml` | Lightweight UML sketches, concept maps | Yes | — | — |
+| `wavedrom` | Digital timing / waveform diagrams | Yes | Yes | Yes |
+| `vegalite` | Data-driven charts (concise grammar) | Yes | Yes | Yes |
+| `vega` | Complex data visualizations | Yes | Yes | Yes |
+| `ditaa` | ASCII art → clean SVG | Yes | Yes | — |
+| `svgbob` | Rich ASCII art → crisp SVG | Yes | — | — |
+| `goat` | ASCII art for inline Markdown | Yes | — | — |
+| `excalidraw` | Hand-drawn wireframes and sketches | Yes | Yes | Yes |
+| `pikchr` | Minimalist line-art diagrams | Yes | — | — |
+| `bytefield` | Binary/byte protocol packet fields | Yes | — | — |
+| `wireviz` | Wiring harnesses, cable connectors | Yes | Yes | — |
+| `blockdiag` / `actdiag` / `seqdiag` / `nwdiag` | Quick block, activity, network diagrams | Yes | Yes | — |
+
+> **Companion server**: On the public `kroki.io` instance, companion-server engines work transparently. For self-hosted Kroki, run the matching Docker image alongside the gateway (`yuzutech/kroki-mermaid`, `yuzutech/kroki-bpmn`, etc.).
 
 ---
 

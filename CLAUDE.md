@@ -22,14 +22,21 @@ python3 skills/kroki-editorial-diagrams/scripts/render_kroki_diagram.py \
   --output docs/examples/architecture-d2/rendered.svg \
   --interactive-output docs/examples/architecture-d2/interactive.html
 
-# Render to PNG or PDF (--interactive-output unavailable for non-SVG)
+# Render to PNG, PDF, or JPG (--interactive-output unavailable for non-SVG)
 python3 skills/kroki-editorial-diagrams/scripts/render_kroki_diagram.py \
   --engine mermaid --format png --input path/to/source.mmd --output out.png
 
-# Use a self-hosted Kroki instance
+# Pass diagram options (D2 theme, layout; PlantUML theme; etc.)
+python3 skills/kroki-editorial-diagrams/scripts/render_kroki_diagram.py \
+  --engine d2 --input source.d2 --output rendered.svg \
+  --diagram-option theme=earth-tones \
+  --diagram-option layout=elk
+
+# Use a self-hosted Kroki instance; increase timeout if server is slow
 python3 skills/kroki-editorial-diagrams/scripts/render_kroki_diagram.py \
   --engine plantuml --input src.puml --output out.svg \
-  --kroki-endpoint https://kroki.example.com
+  --kroki-endpoint https://kroki.example.com \
+  --timeout 60
 
 # Print shareable Kroki URL without rendering (offline / debug)
 python3 skills/kroki-editorial-diagrams/scripts/render_kroki_diagram.py \
@@ -46,7 +53,7 @@ This repo is a Claude Code / Antigravity IDE (Gemini CLI) **skill** — an LLM i
 
 ### Python scripts (three cooperating modules)
 
-**`render_kroki_diagram.py`** — the CLI. It reads the source file, POSTs to the Kroki API via `curl` (always `Content-Type: text/plain; charset=utf-8` to handle `%` characters safely), writes the rendered output, then calls the other two modules. Index auto-build fires only when the output filename is exactly `rendered.svg`; use `--skip-index` to suppress it.
+**`render_kroki_diagram.py`** — the CLI. It reads the source file, POSTs to the Kroki API via `curl` (always `Content-Type: text/plain; charset=utf-8` to handle `%` characters safely), writes the rendered output, then calls the other two modules. Supports `--diagram-option key=value` (repeatable) to pass engine-specific Kroki options as `Kroki-Diagram-Options-*` headers, `--format jpg` (in addition to svg/png/pdf), and `--timeout` for slow self-hosted instances. Index auto-build fires only when the output filename is exactly `rendered.svg`; use `--skip-index` to suppress it.
 
 **`build_interactive_kroki_html.py`** — wraps a rendered SVG in an HTML page with click-to-highlight node focus, animated directional edge flows, and pan/zoom. Annotates the raw SVG with `data-node-id`, `data-edge-source`, `data-edge-target` attributes. Uses `defusedxml` for XXE-safe SVG parsing. Interactive tier varies by engine: `full` (PlantUML, C4-PlantUML, Graphviz, D2), `best-effort` (Mermaid, ERD), `limited` (BPMN).
 
@@ -76,3 +83,5 @@ This repo is a Claude Code / Antigravity IDE (Gemini CLI) **skill** — an LLM i
 - Index rebuild triggers only when the output file is named exactly `rendered.svg`. Naming it anything else (e.g. `diagram.svg`) silently skips indexing.
 - The Kroki `%` character trap: do not strip `%` from source; the POST with `text/plain; charset=utf-8` already handles it.
 - Mermaid node labels: use `<br/>` for line breaks, not `\n` — literal newlines corrupt SVG output.
+- C4-PlantUML self-hosted: use `!include <C4Container>` (local stdlib), not the raw GitHub URL — the GitHub URL fails on Kroki's default SECURE mode.
+- Companion-server engines (Mermaid, BPMN, WaveDrom, Vega/Vega-Lite, Excalidraw, Diagrams.net) require separate Docker containers on self-hosted Kroki. On public `kroki.io` they work transparently.

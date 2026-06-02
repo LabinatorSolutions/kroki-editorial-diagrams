@@ -13,12 +13,30 @@ def prettify_name(name: str) -> str:
 
 
 _SOURCE_SUFFIX_MAP: dict[str, str] = {
+    # Core editorial engines
     ".puml": "plantuml",
+    ".pu": "plantuml",
+    ".c4puml": "c4plantuml",
     ".mmd": "mermaid",
     ".dot": "graphviz",
     ".erd": "erd",
     ".d2": "d2",
     ".bpmn": "bpmn",
+    # Extended engines
+    ".structurizr": "structurizr",
+    ".dsl": "structurizr",
+    ".nomnoml": "nomnoml",
+    ".vg": "vega",
+    ".vega": "vega",
+    ".vgl": "vegalite",
+    ".vegalite": "vegalite",
+    ".wsd": "wavedrom",
+    ".wavedrom": "wavedrom",
+    ".ditaa": "ditaa",
+    ".svgbob": "svgbob",
+    ".bob": "svgbob",
+    ".pikchr": "pikchr",
+    ".wireviz": "wireviz",
 }
 
 
@@ -60,13 +78,24 @@ def load_artifact_entry(artifact_dir: pathlib.Path) -> dict[str, str] | None:
 def build_index_html(entries: list[dict[str, str]], title: str) -> str:
     # Editorial coloring based on design tokens
     _engine_colors: dict[str, tuple[str, str]] = {
-        "plantuml":   ("235, 108, 54",  "#eb6c36"),
-        "c4plantuml": ("46, 90, 168",   "#2e5aa8"),
-        "d2":         ("79, 93, 117",   "#4f5d75"),
-        "graphviz":   ("79, 93, 117",   "#4f5d75"),
-        "mermaid":    ("122, 131, 153", "#7a8399"),
-        "erd":        ("191, 192, 192", "#bfc0c0"),
-        "bpmn":       ("100, 120, 140", "#64788c"),
+        "plantuml":    ("235, 108, 54",  "#eb6c36"),
+        "c4plantuml":  ("46, 90, 168",   "#2e5aa8"),
+        "d2":          ("79, 93, 117",   "#4f5d75"),
+        "graphviz":    ("79, 93, 117",   "#4f5d75"),
+        "mermaid":     ("122, 131, 153", "#7a8399"),
+        "erd":         ("191, 192, 192", "#bfc0c0"),
+        "bpmn":        ("100, 120, 140", "#64788c"),
+        "structurizr": ("46, 90, 168",   "#2e5aa8"),
+        "nomnoml":     ("79, 93, 117",   "#4f5d75"),
+        "wavedrom":    ("122, 131, 153", "#7a8399"),
+        "vega":        ("46, 90, 168",   "#2e5aa8"),
+        "vegalite":    ("46, 90, 168",   "#2e5aa8"),
+        "ditaa":       ("191, 192, 192", "#bfc0c0"),
+        "svgbob":      ("191, 192, 192", "#bfc0c0"),
+        "goat":        ("191, 192, 192", "#bfc0c0"),
+        "pikchr":      ("122, 131, 153", "#7a8399"),
+        "excalidraw":  ("235, 108, 54",  "#eb6c36"),
+        "wireviz":     ("79, 93, 117",   "#4f5d75"),
     }
     _default_color = ("235, 108, 54", "#eb6c36")
 

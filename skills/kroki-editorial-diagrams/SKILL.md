@@ -1,7 +1,7 @@
 ---
 name: kroki-editorial-diagrams
-description: Create premium, responsive, interactive diagrams (flowcharts, sequence, architecture, data models) with an elegant editorial design aesthetic. Chooses the optimal layout engine (PlantUML, C4, D2, Mermaid, Graphviz) and exports to PNG/SVG, adding interactive edge flows and visual galleries.
-allowed-tools: Read, Write, Grep, Glob, Bash(curl *), Bash(mkdir *), Bash(ls *), Bash(python3 *)
+description: Create premium, responsive, interactive diagrams (flowcharts, sequence, architecture, data models, timing, data visualization) with an elegant editorial design aesthetic. Chooses the optimal layout engine (PlantUML, C4, D2, Mermaid, Graphviz, Structurizr, WaveDrom, Vega-Lite, ERD, BPMN, and more) and exports to PNG/SVG, adding interactive edge flows and visual galleries.
+allowed-tools: Read, Write, Grep, Glob, Bash(curl *), Bash(cat *), Bash(mkdir *), Bash(ls *), Bash(python3 *)
 ---
 
 # Kroki Editorial Diagrams Skill
@@ -14,7 +14,7 @@ You are an elite, modern technical designer. Your job is to take the user's diag
 
 1. **Analyze Context**: Read the relevant codebase files, technical logs, or user prompt to understand the system or process to be diagrammed.
 2. **Determine Diagram Family**: Match the user's intent to the correct diagram type using `references/use-case-taxonomy.md`.
-3. **Choose Engine & Styling**: Select the best rendering engine using `references/engine-matrix.md` (D2, PlantUML, C4, Mermaid, Graphviz, or ERD) and load its aesthetic scaffold from `references/engine-style-templates.md`.
+3. **Choose Engine & Styling**: Select the best rendering engine using `references/engine-matrix.md` (D2, PlantUML, C4, Mermaid, Graphviz, ERD, Structurizr, WaveDrom, Vega-Lite, or others) and load its aesthetic scaffold from `references/engine-style-templates.md`.
 4. **Layout Planning**: Enforce the non-negotiable **Narrow & Tall** vertical layout standard (maximum target width ~800px) from `references/layout-control.md` to prevent horizontal scrolling on standard viewports.
 5. **Draft Diagram Source**: Generate the clean diagram code, applying the core visual guidelines from `references/style-guide.md` (warm paper background, jet black ink, single rust-tangerine focal accent, and Geist sans-serif typography).
 6. **Run Kroki Exporter**: Execute `python3 scripts/render_kroki_diagram.py` to POST to the Kroki API and generate the `.svg` asset (default). PNG is generated with a second call using `--format png --skip-index`; see execution commands below.
@@ -27,19 +27,26 @@ You are an elite, modern technical designer. Your job is to take the user's diag
 
 ## 2. Diagram Family & Engine Selection
 
-| If you want to show...                                | Choose Family        | Default Engine         |
-| ----------------------------------------------------- | -------------------- | ---------------------- |
-| **System boundaries, container architecture**         | C4 Container         | `c4plantuml` / `d2`    |
-| **Microservices, pipelines, system layouts**          | General Architecture | `d2` / `plantuml`      |
-| **Formal business processes with swimlanes**          | BPMN                 | `bpmn`                 |
-| **Logic branches, processes, decision steps**         | Flowchart            | `mermaid` / `plantuml` |
-| **Step-by-step API interactions, protocol messaging** | Sequence             | `plantuml`             |
-| **OOP hierarchies, static structures**                | Class Diagram        | `plantuml`             |
-| **State transitions, lifecycle machines**             | State Machine        | `plantuml` / `mermaid` |
-| **Entity fields, primary keys, DB schema mapping**    | ERD                  | `erd` / `plantuml`     |
-| **Schedules, Gantt, parallel dependencies**           | Gantt / Timeline     | `mermaid`              |
-| **Network topology, infrastructure, subnets**         | Network Topology     | `graphviz` / `d2`      |
-| **Topic breakdowns, brainstorming nodes**             | Mind Map             | `plantuml`             |
+| If you want to show… | Choose Family | Default Engine | Notes |
+| --- | --- | --- | --- |
+| **System boundaries, container architecture** | C4 Container | `structurizr` / `c4plantuml` / `d2` | `structurizr` needs no stdlib include |
+| **Microservices, pipelines, system layouts** | General Architecture | `d2` / `plantuml` | |
+| **Formal business processes with swimlanes** | BPMN | `bpmn` | No styling; companion server |
+| **Logic branches, processes, decision steps** | Flowchart | `mermaid` / `plantuml` | |
+| **Step-by-step API interactions, protocol messaging** | Sequence | `plantuml` | |
+| **OOP hierarchies, static structures** | Class Diagram | `plantuml` | |
+| **State transitions, lifecycle machines** | State Machine | `plantuml` / `mermaid` | |
+| **Entity fields, primary keys, DB schema mapping** | ERD | `erd` / `plantuml` | |
+| **Schedules, Gantt, parallel dependencies** | Gantt / Timeline | `mermaid` | |
+| **Network topology, infrastructure, subnets** | Network Topology | `graphviz` / `d2` | |
+| **Topic breakdowns, brainstorming nodes** | Mind Map | `plantuml` | |
+| **Digital timing, clock signals, bus waveforms** | Timing Diagram | `wavedrom` | Companion server |
+| **Data charts, bar/line/scatter plots** | Data Visualization | `vegalite` / `vega` | Companion server |
+| **ASCII art, plaintext, README-embedded diagrams** | ASCII Art | `ditaa` / `svgbob` / `goat` | No styling API |
+| **Hand-drawn wireframes, rough architecture sketches** | Sketch / Whiteboard | `excalidraw` | No styling; companion server |
+| **Lightweight UML, concept maps, quick class sketches** | Lightweight UML | `nomnoml` | |
+| **Hardware signals, HDL components, protocol packet formats** | Hardware / Protocol | `symbolator` / `bytefield` / `packetdiag` | Specialist use |
+| **Wiring harnesses, cable connector diagrams** | Wiring / Hardware | `wireviz` | |
 
 ---
 
@@ -81,7 +88,7 @@ Always define a solid masking background (`#f5f5f5` in light mode or `#2d3142` i
 Render via Python wrapper:
 
 ```bash
-# Render D2 architecture to SVG (Default)
+# Render D2 architecture to SVG (default)
 python3 scripts/render_kroki_diagram.py \
   --engine d2 \
   --input docs/diagrams/system-arch/source.d2 \
@@ -98,18 +105,27 @@ python3 scripts/render_kroki_diagram.py \
   --interactive-output docs/diagrams/auth-flow/interactive.html \
   --summary "Auditing user JWT sign-on sequence and DB validation."
 
-# Render with a self-hosted Kroki instance
+# Pass diagram options (D2 theme + layout; PlantUML theme; etc.)
+python3 scripts/render_kroki_diagram.py \
+  --engine d2 \
+  --input docs/diagrams/system-arch/source.d2 \
+  --output docs/diagrams/system-arch/rendered.svg \
+  --diagram-option theme=earth-tones \
+  --diagram-option layout=elk
+
+# Render with a self-hosted Kroki instance; increase timeout for slow servers
 python3 scripts/render_kroki_diagram.py \
   --engine plantuml \
   --input docs/diagrams/auth-flow/source.puml \
   --output docs/diagrams/auth-flow/rendered.svg \
-  --kroki-endpoint https://kroki.internal.example.com
+  --kroki-endpoint https://kroki.internal.example.com \
+  --timeout 60
 ```
 
 If offline or only compiling shareable URL:
 
 ```bash
-# Print GET URL only
+# Print GET URL only (no network call)
 python3 scripts/render_kroki_diagram.py \
   --engine mermaid \
   --input docs/diagrams/flow/source.mmd \
@@ -120,9 +136,12 @@ python3 scripts/render_kroki_diagram.py \
 
 ## 5. Kroki Debugging & Gotcha Guide
 
-* **Self-hosted Kroki**: Use `--kroki-endpoint` to point at an internal instance (e.g., `https://kroki.internal.example.com`). The default endpoint is `https://kroki.io`.
+* **Self-hosted Kroki**: Use `--kroki-endpoint` to point at an internal instance (e.g., `https://kroki.internal.example.com`). Default is `https://kroki.io`. Use `--timeout 60` if the server is slow.
+* **Companion server engines** (Mermaid, BPMN, WaveDrom, Vega/Vega-Lite, Excalidraw, Diagrams.net): On public `kroki.io` these work transparently. On a self-hosted Kroki gateway, they require separate Docker companion containers (`yuzutech/kroki-mermaid`, `yuzutech/kroki-bpmn`, etc.) running alongside the gateway, with `KROKI_*_HOST` env vars configured. Sending a companion engine request to a gateway-only instance returns a 404 or 503 — not a diagram error.
+* **Diagram options** (`--diagram-option key=value`): Pass engine-specific rendering options. Examples — D2: `theme=earth-tones`, `layout=elk`, `sketch=`; PlantUML: `theme=minty`, `no-metadata=`. Options are sent as `Kroki-Diagram-Options-*` HTTP headers. Full option catalogue in `references/kroki-safe-subset.md`.
+* **C4 stdlib include on self-hosted**: Use `!include <C4Container>` (local stdlib), not the raw GitHub URL. The GitHub URL fails on self-hosted Kroki running in default `SECURE` mode. See `references/engine-style-templates.md` Section 3.
 * **Percent Character Trap (`%`)**: If Kroki returns a `400 Bad Request`, it's often because a `%` character (e.g., `"load: 40%"`) was posted without a specified Content-Type. The server tries to URL-decode `%` and fails.
-  * *Resolution*: The Python runner handles this by posting with `Content-Type: text/plain; charset=utf-8`. Do not attempt to strip or alter percent symbols.
+  * *Resolution*: The Python runner handles this by posting with `Content-Type: text/plain; charset=utf-8`. Do not strip or alter percent symbols.
 * **Mermaid YAML Discrepancy**: Older Mermaid parsers in Kroki can choke on newer frontmatter configs like `---\ntitle:...\n---`.
-  * *Resolution*: Prefer standard title markup or inject variables in the config block.
-* **Mermaid Line Breaks**: Use `<br/>` for HTML-safe breaks within node labels (e.g., `Node["First Line<br/>Second Line"]`). Using literal `\n` in labels causes SVG markup corruption in the XML parser.
+  * *Resolution*: Use the `%%{init:...}%%` block instead of YAML frontmatter.
+* **Mermaid Line Breaks**: Use `<br/>` for HTML-safe breaks within node labels (e.g., `Node["First Line<br/>Second Line"]`). Literal `\n` corrupts SVG XML output.
