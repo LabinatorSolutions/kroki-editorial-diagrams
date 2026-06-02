@@ -1,6 +1,8 @@
 # Git ignore rules for Kroki Editorial Diagrams
 *.pyc
 *.pyo
+# IDE / local config
+.claude/
 .directory
 .DS_Store
 .env
@@ -16,6 +18,4 @@ node_modules/
 **/rendered.pdf
 **/rendered.png
 **/rendered.svg
-diagrams/
-docs/diagrams/
-index.html
+**/index.html

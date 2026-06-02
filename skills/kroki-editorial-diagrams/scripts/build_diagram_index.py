@@ -12,17 +12,20 @@ def prettify_name(name: str) -> str:
     return name.replace("-", " ").replace("_", " ").title()
 
 
+_SOURCE_SUFFIX_MAP: dict[str, str] = {
+    ".puml": "plantuml",
+    ".mmd": "mermaid",
+    ".dot": "graphviz",
+    ".erd": "erd",
+    ".d2": "d2",
+}
+
+
 def infer_engine_from_source(artifact_dir: pathlib.Path) -> str:
     for source in artifact_dir.glob("source.*"):
-        suffix = source.suffix.lower()
-        if suffix == ".puml":
-            return "plantuml"
-        if suffix == ".mmd":
-            return "mermaid"
-        if suffix == ".dot":
-            return "graphviz"
-        if suffix == ".erd":
-            return "erd"
+        engine = _SOURCE_SUFFIX_MAP.get(source.suffix.lower())
+        if engine:
+            return engine
     return "diagram"
 
 
@@ -62,6 +65,7 @@ def build_index_html(entries: list[dict[str, str]], title: str) -> str:
         "graphviz":   ("79, 93, 117",   "#4f5d75"),
         "mermaid":    ("122, 131, 153", "#7a8399"),
         "erd":        ("191, 192, 192", "#bfc0c0"),
+        "bpmn":       ("100, 120, 140", "#64788c"),
     }
     _default_color = ("235, 108, 54", "#eb6c36")
 
@@ -334,6 +338,24 @@ def build_index_html(entries: list[dict[str, str]], title: str) -> str:
     @keyframes fade-up {{ from {{ opacity: 0; transform: translateY(18px); }} to {{ opacity: 1; transform: translateY(0); }} }}
 
     /* ── Responsive ──────────────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {{
+      .card,
+      .card-preview img,
+      .toggle-indicator,
+      .toggle-btn {{
+        transition: none;
+      }}
+      .hero {{
+        animation: none; opacity: 1; transform: none;
+      }}
+      .toolbar {{
+        animation: none; opacity: 1; transform: none;
+      }}
+      .gallery {{
+        animation: none; opacity: 1; transform: none;
+      }}
+    }}
+
     @media (max-width: 600px) {{
       main {{ padding: 40px 14px 64px; }}
       .hero {{ margin-bottom: 48px; }}
@@ -341,6 +363,21 @@ def build_index_html(entries: list[dict[str, str]], title: str) -> str:
       .view-toggle {{ align-self: flex-end; }}
       .gallery.view-grid {{ grid-template-columns: 1fr; }}
       .gallery.view-list .card-preview {{ display: none; }}
+    }}
+
+    @media print {{
+      nav,
+      .bg-layer,
+      .toolbar,
+      .view-toggle {{ display: none; }}
+      body {{ background: #ffffff; }}
+      main {{ padding: 20px; }}
+      .card {{
+        box-shadow: none; break-inside: avoid;
+        border: 1px solid #ccc;
+      }}
+      .card:hover {{ transform: none; box-shadow: none; }}
+      .card-preview {{ background: #ffffff; }}
     }}
 
     @media (prefers-color-scheme: dark) {{

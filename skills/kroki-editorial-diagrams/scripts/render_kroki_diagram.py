@@ -23,14 +23,14 @@ SUPPORTED_ENGINES = [
 ]
 
 
-def build_kroki_url(engine: str, fmt: str, source: str) -> str:
+def build_kroki_url(engine: str, fmt: str, source: str, endpoint: str = "https://kroki.io") -> str:
     compressor = zlib.compressobj(level=9, wbits=-15)
     compressed = compressor.compress(source.encode("utf-8")) + compressor.flush()
     encoded = base64.urlsafe_b64encode(compressed).decode("ascii").rstrip("=")
-    return f"https://kroki.io/{engine}/{fmt}/{encoded}"
+    return f"{endpoint}/{engine}/{fmt}/{encoded}"
 
 
-def render(engine: str, fmt: str, source: str) -> bytes:
+def render(engine: str, fmt: str, source: str, endpoint: str = "https://kroki.io") -> bytes:
     result = subprocess.run(
         [
             "curl",
@@ -40,7 +40,7 @@ def render(engine: str, fmt: str, source: str) -> bytes:
             "30",
             "-X",
             "POST",
-            f"https://kroki.io/{engine}/{fmt}",
+            f"{endpoint}/{engine}/{fmt}",
             "-H",
             "Content-Type: text/plain; charset=utf-8",
             "--data-binary",
@@ -71,7 +71,7 @@ def main() -> int:
     parser.add_argument(
         "--format",
         default="svg",
-        choices=["svg", "png", "pdf", "txt"],
+        choices=["svg", "png", "pdf"],
         help="Output format.",
     )
     parser.add_argument(
@@ -100,11 +100,16 @@ def main() -> int:
         action="store_true",
         help="Only print the shareable Kroki GET URL and do not render via POST.",
     )
+    parser.add_argument(
+        "--kroki-endpoint",
+        default="https://kroki.io",
+        help="Custom Kroki server endpoint (for self-hosted instances).",
+    )
     args = parser.parse_args()
 
     input_path = pathlib.Path(args.input)
     source = input_path.read_text(encoding="utf-8")
-    url = build_kroki_url(args.engine, args.format, source)
+    url = build_kroki_url(args.engine, args.format, source, endpoint=args.kroki_endpoint)
 
     if args.print_url_only:
         print(url)
@@ -113,7 +118,7 @@ def main() -> int:
     output_path = pathlib.Path(args.output) if args.output else input_path.with_suffix(f".{args.format}")
 
     try:
-        rendered = render(args.engine, args.format, source)
+        rendered = render(args.engine, args.format, source, endpoint=args.kroki_endpoint)
     except RuntimeError as exc:
         print(f"Render failed: {exc}", file=sys.stderr)
         print(f"Kroki URL: {url}", file=sys.stderr)

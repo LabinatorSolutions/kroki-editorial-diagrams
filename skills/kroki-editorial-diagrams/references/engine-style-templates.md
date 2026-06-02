@@ -2,6 +2,8 @@
 
 Always prepend or configure your generated diagram DSL files with these exact aesthetic templates to ensure consistent, premium styling across all engines.
 
+> **Font limitation**: Templated engines that render server-side (PlantUML, C4-PlantUML, Mermaid, Graphviz, ERD) can only use fonts installed on the Kroki server. The design system mandates Geist Sans/Mono and Instrument Serif, but Kroki instances typically only have system fonts available. Templates default to Helvetica as the closest sans-serif fallback. When viewing in the interactive HTML viewer, browser-loaded web fonts display correctly — but standalone SVG/PNG/PDF outputs render with server fonts only.
+
 ---
 
 ## 1. D2 (Modern Architecture Default)
@@ -183,4 +185,25 @@ digraph G {
   ]
   ...
 }
+```
+
+
+## 6. ERD (Database Schema)
+
+ERD diagrams have limited styling options but you can control table and relationship appearance:
+
+```erd
+[users]
+  *id {bg: "#ffffff", label: "PK"}
+  name {bg: "#ffffff"}
+  email {bg: "#ffffff"}
+  created_at {bg: "#ececec"}
+
+[posts]
+  *id {bg: "#ffffff", label: "PK"}
+  user_id {bg: "#ececec", label: "FK"}
+  title {bg: "#ffffff"}
+  body {bg: "#ffffff"}
+
+users ||--o{ posts
 ```

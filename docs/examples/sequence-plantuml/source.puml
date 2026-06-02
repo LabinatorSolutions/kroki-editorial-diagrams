@@ -1,0 +1,75 @@
+@startuml
+<style>
+root {
+  FontName "Helvetica"
+  FontSize 13
+  BackgroundColor #f5f5f5
+  LineColor #2d3142
+}
+title {
+  FontName "Georgia"
+  FontSize 16
+  FontStyle bold
+  FontColor #2d3142
+}
+arrow {
+  LineColor #4f5d75
+  FontColor #4f5d75
+  FontSize 10
+}
+participant {
+  BackGroundColor #FFFFFF
+  LineColor #2d3142
+  FontColor #2d3142
+}
+database {
+  BackGroundColor #ffffff
+  LineColor #4f5d75
+  FontColor #2d3142
+}
+note {
+  BackGroundColor #ececec
+  LineColor #bfc0c0
+  FontColor #2d3142
+}
+</style>
+
+title JWT Authentication Flow
+
+actor Client
+participant "API Gateway" as GW
+participant "Auth Service" as Auth
+database "Users DB" as DB
+participant "Orders Service" as Orders
+
+Client -> GW: POST /login (email, password)
+activate GW
+
+GW -> Auth: Authenticate(email, password)
+activate Auth
+
+Auth -> DB: SELECT user WHERE email = ?
+activate DB
+DB --> Auth: user row
+deactivate DB
+
+Auth -> Auth: verify bcrypt hash
+Auth --> GW: JWT access_token + refresh_token
+deactivate Auth
+
+GW --> Client: 200 OK (tokens)
+deactivate GW
+
+Client -> GW: GET /orders (Authorization: Bearer token)
+activate GW
+
+GW -> GW: validate JWT signature
+GW -> Orders: ListOrders(user_id)
+activate Orders
+
+Orders --> GW: order[]
+deactivate Orders
+
+GW --> Client: 200 OK (orders)
+deactivate GW
+@enduml

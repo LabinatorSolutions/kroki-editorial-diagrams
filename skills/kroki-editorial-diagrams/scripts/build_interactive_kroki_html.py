@@ -4,7 +4,7 @@ import pathlib
 import re
 import sys
 import xml.etree.ElementTree as ET
-from defusedxml.ElementTree import fromstring as _safe_fromstring
+from defusedxml.ElementTree import ParseError, fromstring as _safe_fromstring
 
 
 SVG_NS = "http://www.w3.org/2000/svg"
@@ -310,6 +310,7 @@ def build_html_document(
         "graphviz": ("79, 93, 117", "#4f5d75"),  # Slate blue
         "mermaid": ("122, 131, 153", "#7a8399"),  # Muted slate
         "erd": ("191, 192, 192", "#bfc0c0"),  # Silver
+        "bpmn": ("100, 120, 140", "#64788c"),  # Steel blue-grey
     }
     _tool_rgb, _tool_hex = _engine_colors.get(engine, ("235, 108, 54", "#eb6c36"))
 
@@ -615,12 +616,56 @@ def build_html_document(
       100% {{ stroke-dashoffset: 16; filter: brightness(1);   }}
     }}
 
+    @media (prefers-reduced-motion: reduce) {{
+      .interactive-node,
+      .interactive-edge {{
+        transition: none;
+      }}
+      .interactive-edge.edge-flow-forward path,
+      .interactive-edge.edge-flow-forward line,
+      .interactive-edge.edge-flow-forward polyline,
+      .interactive-edge.edge-flow-reverse path,
+      .interactive-edge.edge-flow-reverse line,
+      .interactive-edge.edge-flow-reverse polyline,
+      .interactive-edge.edge-neutral path,
+      .interactive-edge.edge-neutral line,
+      .interactive-edge.edge-neutral polyline {{
+        animation: none;
+      }}
+      .canvas-toolbar button {{
+        transition: none;
+      }}
+    }}
+
     @media (max-width: 720px) {{
       .shell {{ padding: 6px; padding-top: 58px; }}
       .canvas-toolbar {{ top: 10px; right: 10px; gap: 4px; padding: 5px; }}
       .canvas-toolbar button {{ min-width: 30px; height: 28px; padding: 0 6px; }}
       .canvas-viewport {{ height: calc(100vh - 74px); }}
       .canvas-status {{ left: 10px; bottom: 10px; }}
+    }}
+
+    @media print {{
+      .diagram-nav,
+      .canvas-toolbar,
+      .canvas-status {{ display: none; }}
+      .shell {{ padding: 0; }}
+      .stage {{
+        border: none; border-radius: 0; padding: 0;
+        box-shadow: none; background: #ffffff;
+      }}
+      .canvas-viewport {{
+        height: auto; overflow: visible;
+        background: #ffffff;
+      }}
+      .canvas-content {{
+        position: static; transform: none !important;
+      }}
+      .canvas-content svg {{ max-width: 100%; height: auto; }}
+      .interactive-node,
+      .interactive-edge {{
+        opacity: 1 !important; filter: none !important;
+      }}
     }}
 
     @media (prefers-color-scheme: dark) {{
@@ -1080,7 +1125,7 @@ def main() -> int:
             output_path=output_path,
             title=title,
         )
-    except (ET.ParseError, ValueError, KeyError, UnicodeDecodeError) as exc:
+    except (ParseError, ValueError, KeyError, UnicodeDecodeError) as exc:
         print(f"Interactive build failed: {exc}", file=sys.stderr)
         return 1
 

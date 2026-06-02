@@ -1,0 +1,26 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'background': '#f5f5f5',
+    'primaryColor': '#ffffff',
+    'primaryTextColor': '#2d3142',
+    'primaryBorderColor': '#2d3142',
+    'secondaryColor': '#ececec',
+    'secondaryTextColor': '#2d3142',
+    'secondaryBorderColor': '#bfc0c0',
+    'tertiaryColor': 'rgba(235, 108, 54, 0.08)',
+    'tertiaryTextColor': '#eb6c36',
+    'tertiaryBorderColor': '#eb6c36',
+    'lineColor': '#4f5d75',
+    'fontSize': '13px'
+  }
+}}%%
+flowchart TD
+  A[User visits checkout] --> B{Item in stock?}
+  B -->|Yes| C[Reserve inventory]
+  B -->|No| D[Show out-of-stock]
+  C --> E{Payment valid?}
+  E -->|Yes| F[Confirm order]
+  E -->|No| G[Show payment error]
+  F --> H[Send confirmation email]
+  G --> A

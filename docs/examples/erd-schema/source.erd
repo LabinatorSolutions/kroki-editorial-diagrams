@@ -1,0 +1,31 @@
+[users]
+  *id {bg: "#ffffff", label: "PK"}
+  name {bg: "#ffffff"}
+  email {bg: "#ffffff"}
+  password_hash {bg: "#ececec"}
+  created_at {bg: "#ececec"}
+  updated_at {bg: "#ececec"}
+
+[orders]
+  *id {bg: "#ffffff", label: "PK"}
+  user_id {bg: "#ececec", label: "FK"}
+  status {bg: "#ffffff"}
+  total {bg: "#ffffff"}
+  created_at {bg: "#ececec"}
+
+[order_items]
+  *id {bg: "#ffffff", label: "PK"}
+  order_id {bg: "#ececec", label: "FK"}
+  product_id {bg: "#ececec", label: "FK"}
+  quantity {bg: "#ffffff"}
+  price {bg: "#ffffff"}
+
+[products]
+  *id {bg: "#ffffff", label: "PK"}
+  name {bg: "#ffffff"}
+  price {bg: "#ffffff"}
+  stock {bg: "#ffffff"}
+
+users ||--o{ orders
+orders ||--o{ order_items
+order_items }o--|| products

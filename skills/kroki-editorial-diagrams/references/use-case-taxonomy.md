@@ -42,3 +42,10 @@ Identify your diagramming intent and map it to the recommended engine family.
 * **Ideal Family**: BPMN.
 * **Preferred Engine**: `bpmn`.
 * **Note**: BPMN output cannot be styled via this skill's design tokens. Use only when the audience requires standard BPMN notation; prefer `mermaid` flowcharts or `plantuml` activity diagrams for internal process documentation.
+
+### Network Topology & Infrastructure
+
+* **Intent**: Map physical or logical network layouts, including nodes, subnets, firewalls, load balancers, and service connections.
+* **Ideal Family**: General Architecture.
+* **Preferred Engine**: `graphviz` or `d2`.
+* **Note**: Use `graphviz` for highly connected directed graphs (DAGs) where auto-routing matters; prefer `d2` for cleaner container-style layouts with nested boundaries.

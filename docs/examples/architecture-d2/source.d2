@@ -1,0 +1,49 @@
+direction: down
+
+classes: {
+  focal: {
+    style.fill: "rgba(235, 108, 54, 0.08)"
+    style.stroke: "#eb6c36"
+    style.stroke-width: 2
+  }
+  external: {
+    style.fill: "rgba(45, 49, 66, 0.03)"
+    style.stroke: "rgba(45, 49, 66, 0.3)"
+  }
+}
+
+*.style.font-color: "#2d3142"
+*.style.font-size: 13
+*.style.fill: "#ffffff"
+*.style.stroke: "#2d3142"
+*.style.border-radius: 6
+*.style.stroke: "#4f5d75"
+
+client: "Web Client" {
+  class: external
+}
+
+api: "API Gateway" {
+  class: focal
+}
+
+users: "Users Service"
+orders: "Orders Service"
+db: "PostgreSQL" {
+  shape: cylinder
+  class: focal
+}
+cache: "Redis Cache" {
+  shape: cylinder
+}
+queue: "RabbitMQ" {
+  shape: queue
+}
+
+client -> api: HTTPS
+api -> users: gRPC
+api -> orders: gRPC
+users -> db: SQL
+orders -> db: SQL
+users -> cache: "Read"
+orders -> queue: "Publish"

@@ -38,6 +38,7 @@ You are an elite, modern technical designer. Your job is to take the user's diag
 | **State transitions, lifecycle machines**             | State Machine        | `plantuml` / `mermaid` |
 | **Entity fields, primary keys, DB schema mapping**    | ERD                  | `erd` / `plantuml`     |
 | **Schedules, Gantt, parallel dependencies**           | Gantt / Timeline     | `mermaid`              |
+| **Network topology, infrastructure, subnets**          | Network Topology     | `graphviz` / `d2`      |
 | **Topic breakdowns, brainstorming nodes**             | Mind Map             | `plantuml`             |
 
 ---
@@ -80,13 +81,29 @@ Always define a solid masking background (`#f5f5f5` in light mode or `#2d3142` i
 Render via Python wrapper:
 
 ```bash
-# Render to SVG (Default)
+# Render D2 architecture to SVG (Default)
+python3 scripts/render_kroki_diagram.py \
+  --engine d2 \
+  --input docs/diagrams/system-arch/source.d2 \
+  --output docs/diagrams/system-arch/rendered.svg \
+  --interactive-output docs/diagrams/system-arch/interactive.html \
+  --interactive-title "System Architecture Overview" \
+  --summary "Container layout for production microservices."
+
+# Render PlantUML sequence to SVG
 python3 scripts/render_kroki_diagram.py \
   --engine plantuml \
   --input docs/diagrams/auth-flow/source.puml \
   --output docs/diagrams/auth-flow/rendered.svg \
   --interactive-output docs/diagrams/auth-flow/interactive.html \
   --summary "Auditing user JWT sign-on sequence and DB validation."
+
+# Render with a self-hosted Kroki instance
+python3 scripts/render_kroki_diagram.py \
+  --engine plantuml \
+  --input docs/diagrams/auth-flow/source.puml \
+  --output docs/diagrams/auth-flow/rendered.svg \
+  --kroki-endpoint https://kroki.internal.example.com
 ```
 
 If offline or only compiling shareable URL:
@@ -103,6 +120,7 @@ python3 scripts/render_kroki_diagram.py \
 
 ## 5. Kroki Debugging & Gotcha Guide
 
+* **Self-hosted Kroki**: Use `--kroki-endpoint` to point at an internal instance (e.g., `https://kroki.internal.example.com`). The default endpoint is `https://kroki.io`.
 * **Percent Character Trap (`%`)**: If Kroki returns a `400 Bad Request`, it's often because a `%` character (e.g., `"load: 40%"`) was posted without a specified Content-Type. The server tries to URL-decode `%` and fails.
   * *Resolution*: The Python runner handles this by posting with `Content-Type: text/plain; charset=utf-8`. Do not attempt to strip or alter percent symbols.
 * **Mermaid YAML Discrepancy**: Older Mermaid parsers in Kroki can choke on newer frontmatter configs like `---\ntitle:...\n---`.
