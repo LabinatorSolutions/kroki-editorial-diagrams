@@ -152,7 +152,7 @@ def annotate_mermaid(root: ET.Element) -> tuple[int, int]:
         if "node" not in classes:
             continue
 
-        match = re.match(r"^flowchart-(.+)-\d+$", group_id)
+        match = re.match(r"^(?:.*?-)?flowchart-(.+)-\d+$", group_id)
         if not match:
             continue
 
@@ -169,7 +169,7 @@ def annotate_mermaid(root: ET.Element) -> tuple[int, int]:
             continue
 
         edge_id = element.get("id") or ""
-        match = re.match(r"^L_([^_]+)_([^_]+)_\d+$", edge_id)
+        match = re.match(r"^(?:.*?-)?L_([^_]+)_([^_]+)_\d+$", edge_id)
         if not match:
             continue
 
@@ -252,8 +252,45 @@ def annotate_plantuml_description(root: ET.Element) -> tuple[int, int]:
 
 
 def annotate_d2(root: ET.Element) -> tuple[int, int]:
-    """D2 SVG output uses the same class='node'/'edge' conventions as Graphviz."""
-    return annotate_graphviz_like(root)
+    node_count = 0
+    edge_count = 0
+    import base64
+
+    def is_base64(s: str) -> bool:
+        if not re.match(r"^[A-Za-z0-9+/=]+$", s):
+            return False
+        try:
+            padded = s + "=" * (-len(s) % 4)
+            base64.b64decode(padded.encode("ascii"), validate=True)
+            return True
+        except Exception:
+            return False
+
+    def decode_base64(s: str) -> str:
+        padded = s + "=" * (-len(s) % 4)
+        return base64.b64decode(padded.encode("ascii")).decode("utf-8", errors="ignore")
+
+    for group in root.findall(".//svg:g", NS):
+        classes = (group.get("class") or "").split()
+        for cls in classes:
+            if is_base64(cls):
+                decoded = decode_base64(cls)
+                if "->" in decoded or "-&gt;" in decoded:
+                    match = re.match(r"^\((.+?)\s*(?:->|-&gt;)\s*(.+?)\)(?:\[\d+\])?$", decoded)
+                    if match:
+                        source, target = match.groups()
+                        group.set("data-edge-source", source.strip())
+                        group.set("data-edge-target", target.strip())
+                        group.set("data-edge-kind", "directed")
+                        append_class(group, "interactive-edge")
+                        edge_count += 1
+                else:
+                    group.set("data-node-id", decoded.strip())
+                    append_class(group, "interactive-node")
+                    node_count += 1
+                break
+
+    return node_count, edge_count
 
 
 def annotate_svg(engine: str, svg_text: str) -> tuple[str, dict[str, str | int]]:
@@ -280,8 +317,7 @@ def annotate_svg(engine: str, svg_text: str) -> tuple[str, dict[str, str | int]]
         node_count, edge_count = annotate_plantuml_description(root)
         tier = "full" if edge_count else "best-effort"
     elif engine == "structurizr":
-        # Structurizr emits Graphviz-compatible node/edge groups; attempt full annotation.
-        node_count, edge_count = annotate_graphviz_like(root)
+        node_count, edge_count = annotate_plantuml_description(root)
         tier = "full" if edge_count else "best-effort"
     else:
         node_count = 0

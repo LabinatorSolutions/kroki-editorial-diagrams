@@ -16,13 +16,13 @@ direction: down
 # Global visual presets
 classes: {
   focal: {
-    style.fill: "rgba(235, 108, 54, 0.08)"
+    style.fill: "#fdece5"
     style.stroke: "#eb6c36"
     style.stroke-width: 2
   }
   external: {
-    style.fill: "rgba(45, 49, 66, 0.03)"
-    style.stroke: "rgba(45, 49, 66, 0.3)"
+    style.fill: "#f0f0f2"
+    style.stroke: "#c0c2c7"
   }
 }
 
@@ -234,19 +234,19 @@ BPMN diagrams rendered via Kroki use a fixed renderer with no styling API. Desig
 ERD diagrams have limited styling options but you can control table and relationship appearance:
 
 ```erd
-[users]
-  *id {bg: "#ffffff", label: "PK"}
-  name {bg: "#ffffff"}
-  email {bg: "#ffffff"}
-  created_at {bg: "#ececec"}
+[users] {bgcolor: "#f5f5f5"}
+  *id {bgcolor: "#ffffff", label: "PK"}
+  name {bgcolor: "#ffffff"}
+  email {bgcolor: "#ffffff"}
+  created_at {bgcolor: "#ececec"}
 
-[posts]
-  *id {bg: "#ffffff", label: "PK"}
-  user_id {bg: "#ececec", label: "FK"}
-  title {bg: "#ffffff"}
-  body {bg: "#ffffff"}
+[posts] {bgcolor: "#f5f5f5"}
+  *id {bgcolor: "#ffffff", label: "PK"}
+  user_id {bgcolor: "#ececec", label: "FK"}
+  title {bgcolor: "#ffffff"}
+  body {bgcolor: "#ffffff"}
 
-users ||--o{ posts
+users 1--* posts
 ```
 
 ---

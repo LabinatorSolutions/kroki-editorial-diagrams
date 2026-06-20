@@ -102,10 +102,9 @@ def test_annotate_graphviz_detects_nodes_and_edges():
     assert meta["tier"] in ("full", "best-effort")
 
 
-def test_annotate_d2_uses_graphviz_conventions():
+def test_annotate_d2_does_not_use_graphviz_conventions():
     _, meta = annotate_svg("d2", GRAPHVIZ_SVG)
-    assert meta["nodes"] == 2
-    assert meta["edges"] == 1
+    assert meta["edges"] == 0
 
 
 def test_annotate_unknown_engine_is_limited():
@@ -204,6 +203,47 @@ def test_annotate_mermaid_detects_nodes_and_edges():
     assert "data-node-id" in annotated
     assert "data-edge-source" in annotated
     assert "data-edge-kind" in annotated
+
+
+MERMAID_PREFIXED_SVG = """\
+<svg xmlns="http://www.w3.org/2000/svg" id="container" viewBox="0 0 400 300">
+  <g id="container-flowchart-A-42" class="node">
+    <text>A</text>
+  </g>
+  <g id="container-flowchart-B-43" class="node">
+    <text>B</text>
+  </g>
+  <g id="container-L_A_B_0" class="flowchart-link" marker-end="url(#arrowhead)">
+    <path/>
+  </g>
+</svg>"""
+
+def test_annotate_mermaid_with_prefixed_ids():
+    annotated, meta = annotate_svg("mermaid", MERMAID_PREFIXED_SVG)
+    assert meta["nodes"] == 2
+    assert meta["edges"] == 1
+    assert 'data-node-id="A"' in annotated
+    assert 'data-node-id="B"' in annotated
+    assert 'data-edge-source="A"' in annotated
+    assert 'data-edge-target="B"' in annotated
+
+
+D2_SVG = """\
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <g class="Y2xpZW50 external"><rect/></g>
+  <g class="YXBp focal"><rect/></g>
+  <g class="KGNsaWVudCAtJmd0OyBhcGkpWzBd"><path/></g>
+</svg>"""
+
+def test_annotate_d2_decodes_base64_and_escaped_arrows():
+    annotated, meta = annotate_svg("d2", D2_SVG)
+    assert meta["nodes"] == 2
+    assert meta["edges"] == 1
+    assert 'data-node-id="client"' in annotated
+    assert 'data-node-id="api"' in annotated
+    assert 'data-edge-source="client"' in annotated
+    assert 'data-edge-target="api"' in annotated
+
 
 
 # ---------------------------------------------------------------------------
