@@ -254,44 +254,39 @@ def test_extended_engines_present():
 
 
 def test_diagram_option_curl_headers():
-    mock_result = MagicMock()
-    mock_result.returncode = 0
-    mock_result.stdout = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
-    mock_result.stderr = b""
+    mock_response = MagicMock()
+    mock_response.read.return_value = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+    mock_response.__enter__.return_value = mock_response
 
-    with patch("subprocess.run", return_value=mock_result) as mock_run:
+    with patch("urllib.request.urlopen", return_value=mock_response) as mock_urlopen:
         render(
             "d2", "svg", "direction: down",
             diagram_options=[("theme", "earth-tones"), ("layout", "elk")],
         )
-        cmd = mock_run.call_args[0][0]
-        assert "Kroki-Diagram-Options-Theme: earth-tones" in cmd
-        assert "Kroki-Diagram-Options-Layout: elk" in cmd
+        req = mock_urlopen.call_args[0][0]
+        assert req.get_header("Kroki-diagram-options-theme") == "earth-tones"
+        assert req.get_header("Kroki-diagram-options-layout") == "elk"
 
 
 def test_diagram_option_no_options_produces_no_extra_headers():
-    mock_result = MagicMock()
-    mock_result.returncode = 0
-    mock_result.stdout = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
-    mock_result.stderr = b""
+    mock_response = MagicMock()
+    mock_response.read.return_value = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+    mock_response.__enter__.return_value = mock_response
 
-    with patch("subprocess.run", return_value=mock_result) as mock_run:
+    with patch("urllib.request.urlopen", return_value=mock_response) as mock_urlopen:
         render("graphviz", "svg", "digraph G {}")
-        cmd = mock_run.call_args[0][0]
-        assert not any("Kroki-Diagram-Options" in arg for arg in cmd)
+        req = mock_urlopen.call_args[0][0]
+        assert not any(key.startswith("Kroki-diagram-options") for key in req.headers)
 
 
 def test_timeout_is_passed_to_curl():
-    mock_result = MagicMock()
-    mock_result.returncode = 0
-    mock_result.stdout = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
-    mock_result.stderr = b""
+    mock_response = MagicMock()
+    mock_response.read.return_value = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+    mock_response.__enter__.return_value = mock_response
 
-    with patch("subprocess.run", return_value=mock_result) as mock_run:
+    with patch("urllib.request.urlopen", return_value=mock_response) as mock_urlopen:
         render("plantuml", "svg", "@startuml\n@enduml", timeout=90)
-        cmd = mock_run.call_args[0][0]
-        idx = cmd.index("--max-time")
-        assert cmd[idx + 1] == "90"
+        assert mock_urlopen.call_args[1]["timeout"] == 90
 
 
 # ---------------------------------------------------------------------------

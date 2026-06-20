@@ -55,6 +55,9 @@ Maintained by [Labinator.com](https://labinator.com).
 | `blockdiag` / `actdiag` / `seqdiag` / `nwdiag` | Quick block, activity, network diagrams | Yes | Yes | — |
 
 > **Companion server**: On the public `kroki.io` instance, companion-server engines work transparently. For self-hosted Kroki, run the matching Docker image alongside the gateway (`yuzutech/kroki-mermaid`, `yuzutech/kroki-bpmn`, etc.).
+>
+> [!WARNING]
+> **Data Privacy Warning**: By default, rendering requests are transmitted to the public gateway `https://kroki.io`. Because diagram source text may contain sensitive architecture details, schema information, or proprietary IP, you should deploy a self-hosted Kroki server and set `--kroki-endpoint` when diagramming private, confidential, or sensitive systems.
 
 ---
 

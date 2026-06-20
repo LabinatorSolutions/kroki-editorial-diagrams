@@ -85,3 +85,4 @@ This repo is a Claude Code / Antigravity IDE (Gemini CLI) **skill** — an LLM i
 - Mermaid node labels: use `<br/>` for line breaks, not `\n` — literal newlines corrupt SVG output.
 - C4-PlantUML self-hosted: use `!include <C4Container>` (local stdlib), not the raw GitHub URL — the GitHub URL fails on Kroki's default SECURE mode.
 - Companion-server engines (Mermaid, BPMN, WaveDrom, Vega/Vega-Lite, Excalidraw, Diagrams.net) require separate Docker containers on self-hosted Kroki. On public `kroki.io` they work transparently.
+- **Data Privacy & Public Gateway**: By default, rendering requests are transmitted to the public gateway `https://kroki.io`. Because diagram source text may contain sensitive architecture details, schema structures, or proprietary IP, you should configure a self-hosted Kroki server and set `--kroki-endpoint` when diagramming private, confidential, or sensitive systems.

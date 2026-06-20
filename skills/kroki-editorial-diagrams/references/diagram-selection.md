@@ -13,6 +13,7 @@ When deciding how to visually represent information, follow these technical prin
 5. **Always place annotation labels on arrows**: Never use disconnected text nodes to describe arrow routes.
 6. **Check companion server availability for self-hosted Kroki**: Mermaid, BPMN, WaveDrom, Vega/Vega-Lite, Excalidraw, and Diagrams.net require separate companion Docker containers. If you are generating diagrams for a self-hosted environment that only runs the gateway container, choose an engine that is built-in (D2, PlantUML, Graphviz, Structurizr, ERD, Nomnoml, Ditaa, etc.).
 7. **Match styling capability to output purpose**: Engines with `None` styling (BPMN, Excalidraw, ASCII art) produce fixed visuals — use them only when the notation itself (not the aesthetic) is the deliverable.
+8. **Prioritize data privacy**: By default, rendering requests are transmitted to the public gateway `https://kroki.io`. If diagramming sensitive codebase architectures, schema structures, or proprietary IP, configure a self-hosted Kroki server and set `--kroki-endpoint` to prevent data exposure.
 
 ---
 
@@ -30,7 +31,7 @@ Both engines produce C4 model diagrams. Choose based on environment:
 
 * **Use `vegalite`** when the diagram is driven by actual data values (JSON arrays, aggregations, statistical transforms). Vega-Lite's `config` block supports the full editorial color palette.
 * **Use `mermaid`** for hand-coded timelines, Gantt charts, or Git graphs where the structure is authored directly rather than derived from data.
-* **Companion server note**: Both require companion containers in self-hosted Kroki. On public `kroki.io` both work transparently.
+* **Companion server & privacy note**: Both require companion containers in self-hosted Kroki. On public `kroki.io` they work transparently, but note that transmitting requests to `kroki.io` exposes diagram source code to a public third-party service. Use self-hosted Kroki for private/sensitive designs.
 
 ---
 

@@ -3,7 +3,8 @@ import argparse
 import base64
 import json
 import pathlib
-import subprocess
+import urllib.request
+import urllib.error
 import sys
 import zlib
 
@@ -62,38 +63,36 @@ def render(
     diagram_options: list[tuple[str, str]] | None = None,
     timeout: int = 30,
 ) -> bytes:
-    cmd = [
-        "curl",
-        "-sS",
-        "-f",
-        "--max-time",
-        str(timeout),
-        "-X",
-        "POST",
-        f"{endpoint}/{engine}/{fmt}",
-        "-H",
-        "Content-Type: text/plain; charset=utf-8",
-    ]
+    url = f"{endpoint}/{engine}/{fmt}"
+    headers = {
+        "Content-Type": "text/plain; charset=utf-8",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    }
     for key, value in (diagram_options or []):
         # Capitalise each word of the key to match Kroki header convention:
         # e.g. "no-metadata" → "Kroki-Diagram-Options-No-Metadata"
         header_key = "Kroki-Diagram-Options-" + "-".join(
             word.capitalize() for word in key.replace("_", "-").split("-")
         )
-        cmd += ["-H", f"{header_key}: {value}"]
-    cmd += ["--data-binary", "@-"]
+        headers[header_key] = value
 
-    result = subprocess.run(
-        cmd,
-        input=source.encode("utf-8"),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
+    req = urllib.request.Request(
+        url,
+        data=source.encode("utf-8"),
+        headers=headers,
+        method="POST"
     )
-    if result.returncode != 0:
-        stderr = result.stderr.decode("utf-8", errors="replace").strip()
-        raise RuntimeError(stderr or f"curl failed with code {result.returncode}")
-    return result.stdout
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            return response.read()
+    except urllib.error.HTTPError as e:
+        try:
+            err_body = e.read().decode("utf-8", errors="replace").strip()
+        except Exception:
+            err_body = ""
+        raise RuntimeError(err_body or f"Kroki server returned HTTP status {e.code}")
+    except Exception as e:
+        raise RuntimeError(f"Request failed: {e}")
 
 
 def main() -> int:
