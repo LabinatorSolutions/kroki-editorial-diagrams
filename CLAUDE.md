@@ -15,12 +15,14 @@ cd skills/kroki-editorial-diagrams/scripts && python -m pytest tests/ -v
 # Run a single test
 cd skills/kroki-editorial-diagrams/scripts && python -m pytest tests/test_scripts.py::test_build_kroki_url_roundtrip -v
 
-# Render a diagram to SVG (default format) with interactive HTML overlay
+# Render a diagram to SVG with interactive HTML overlay
 python3 skills/kroki-editorial-diagrams/scripts/render_kroki_diagram.py \
   --engine d2 \
   --input docs/examples/architecture-d2/source.d2 \
   --output docs/examples/architecture-d2/rendered.svg \
-  --interactive-output docs/examples/architecture-d2/interactive.html
+  --interactive-output docs/examples/architecture-d2/interactive.html \
+  --interactive-title "Architecture Overview" \
+  --summary "Container layout for production microservices."
 
 # Render to PNG, PDF, or JPG (--interactive-output unavailable for non-SVG)
 python3 skills/kroki-editorial-diagrams/scripts/render_kroki_diagram.py \
@@ -41,6 +43,14 @@ python3 skills/kroki-editorial-diagrams/scripts/render_kroki_diagram.py \
 # Print shareable Kroki URL without rendering (offline / debug)
 python3 skills/kroki-editorial-diagrams/scripts/render_kroki_diagram.py \
   --engine mermaid --input path/to/source.mmd --print-url-only
+
+# Wrap an existing SVG directly (bypasses Kroki API)
+python3 skills/kroki-editorial-diagrams/scripts/build_interactive_kroki_html.py \
+  --engine d2 --input rendered.svg --output interactive.html --title "My Diagram"
+
+# Rebuild the gallery index from an existing artifact directory
+python3 skills/kroki-editorial-diagrams/scripts/build_diagram_index.py \
+  --root docs/examples --title "My Diagram Gallery"
 ```
 
 ## Architecture
@@ -75,7 +85,7 @@ This repo is a Claude Code / Antigravity IDE (Gemini CLI) **skill** — an LLM i
 
 ### Examples
 
-`docs/examples/` contains four working diagrams: `architecture-d2`, `erd-schema`, `flowchart-mermaid`, `sequence-plantuml`. Each folder holds a source file, `rendered.svg`, `interactive.html`, and `_diagram_meta.json`.
+`docs/examples/` contains four working diagrams: `architecture-d2`, `erd-schema`, `flowchart-mermaid`, `sequence-plantuml`. Each folder holds a source file, `rendered.svg`, `interactive.html`, and `.diagram-meta.json` (dotfile — `META_FILENAME` constant in `build_diagram_index.py`).
 
 ## Key invariants
 
@@ -83,6 +93,10 @@ This repo is a Claude Code / Antigravity IDE (Gemini CLI) **skill** — an LLM i
 - Index rebuild triggers only when the output file is named exactly `rendered.svg`. Naming it anything else (e.g. `diagram.svg`) silently skips indexing.
 - The Kroki `%` character trap: do not strip `%` from source; the POST with `text/plain; charset=utf-8` already handles it.
 - Mermaid node labels: use `<br/>` for line breaks, not `\n` — literal newlines corrupt SVG output.
+- Mermaid YAML frontmatter (`---\ntitle:...\n---`) chokes older Kroki parsers. Use `%%{init:...}%%` blocks instead.
 - C4-PlantUML self-hosted: use `!include <C4Container>` (local stdlib), not the raw GitHub URL — the GitHub URL fails on Kroki's default SECURE mode.
 - Companion-server engines (Mermaid, BPMN, WaveDrom, Vega/Vega-Lite, Excalidraw, Diagrams.net) require separate Docker containers on self-hosted Kroki. On public `kroki.io` they work transparently.
 - **Data Privacy & Public Gateway**: By default, rendering requests are transmitted to the public gateway `https://kroki.io`. Because diagram source text may contain sensitive architecture details, schema structures, or proprietary IP, you should configure a self-hosted Kroki server and set `--kroki-endpoint` when diagramming private, confidential, or sensitive systems.
+- `build_interactive_kroki_html.py` engine dispatch: Graphviz/D2/ERD/Structurizr use `annotate_graphviz_like()`; Mermaid uses `annotate_mermaid()`; PlantUML sequence uses `annotate_sequence()`; other PlantUML/C4 uses `annotate_plantuml_description()`. All other engines fall through to `limited` tier (no node/edge annotation).
+- Interactive viewer keyboard shortcuts (non-obvious): `Space`+drag = pan; `+`/`-` = zoom; `0` = fit; `1` = 100%; arrow keys = pan by 60px.
+- `build_diagram_index.py` infers engine from `source.*` file extension via `_SOURCE_SUFFIX_MAP` when `.diagram-meta.json` is absent (e.g., `.dsl` and `.structurizr` both map to `structurizr`).
