@@ -49,6 +49,7 @@ SUPPORTED_ENGINES = [
 
 
 def build_kroki_url(engine: str, fmt: str, source: str, endpoint: str = "https://kroki.io") -> str:
+    endpoint = endpoint.rstrip("/")
     compressor = zlib.compressobj(level=9, wbits=-15)
     compressed = compressor.compress(source.encode("utf-8")) + compressor.flush()
     encoded = base64.urlsafe_b64encode(compressed).decode("ascii").rstrip("=")
@@ -63,6 +64,7 @@ def render(
     diagram_options: list[tuple[str, str]] | None = None,
     timeout: int = 30,
 ) -> bytes:
+    endpoint = endpoint.rstrip("/")
     url = f"{endpoint}/{engine}/{fmt}"
     headers = {
         "Content-Type": "text/plain; charset=utf-8",

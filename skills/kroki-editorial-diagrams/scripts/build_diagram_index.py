@@ -512,7 +512,7 @@ def build_index_html(entries: list[dict[str, str]], title: str) -> str:
 def build_diagram_index(root: pathlib.Path, title: str | None = None) -> pathlib.Path:
     entries = []
     for child in sorted(root.iterdir()):
-        if child.is_dir():
+        if child.is_dir() and not child.name.startswith("."):
             entry = load_artifact_entry(child)
             if entry:
                 entries.append(entry)

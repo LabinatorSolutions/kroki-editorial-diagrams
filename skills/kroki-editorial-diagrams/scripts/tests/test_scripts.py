@@ -433,3 +433,39 @@ def test_render_with_missing_input_file(capsys):
         captured = capsys.readouterr()
         assert "Error: Input file 'nonexistent_file.d2' does not exist." in captured.err
 
+
+def test_build_kroki_url_strips_trailing_slash_from_endpoint():
+    url = build_kroki_url("plantuml", "svg", "A -> B", endpoint="https://kroki.io/")
+    assert "//plantuml" not in url
+    assert url.startswith("https://kroki.io/plantuml/svg/")
+
+
+def test_render_strips_trailing_slash_from_endpoint():
+    mock_response = MagicMock()
+    mock_response.read.return_value = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+    mock_response.__enter__.return_value = mock_response
+
+    with patch("urllib.request.urlopen", return_value=mock_response) as mock_urlopen:
+        render("plantuml", "svg", "A -> B", endpoint="https://kroki.io/")
+        req = mock_urlopen.call_args[0][0]
+        assert req.full_url == "https://kroki.io/plantuml/svg"
+
+
+def test_build_diagram_index_excludes_hidden_dirs(tmp_path):
+    hidden_dir = tmp_path / ".git"
+    hidden_dir.mkdir()
+    (hidden_dir / "rendered.svg").write_text("<svg></svg>")
+    (hidden_dir / META_FILENAME).write_text('{"title":"Hidden Git"}')
+
+    regular_dir = tmp_path / "regular"
+    regular_dir.mkdir()
+    (regular_dir / "rendered.svg").write_text("<svg></svg>")
+    (regular_dir / META_FILENAME).write_text('{"title":"Regular Diagram"}')
+
+    index = build_diagram_index(root=tmp_path)
+    assert index.exists()
+    content = index.read_text()
+    assert "Regular Diagram" in content
+    assert "Hidden Git" not in content
+
+
