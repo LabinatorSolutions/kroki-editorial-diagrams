@@ -745,7 +745,12 @@ def build_html_document(
       const SCALE_STEP = 1.16;
       const MIN_SCALE = 0.08;
       const MAX_SCALE = 3.5;
-      const rawBounds = svg.getBBox();
+      let rawBounds;
+      try {{
+        rawBounds = svg.getBBox();
+      }} catch (e) {{
+        rawBounds = {{ x: 0, y: 0, width: 0, height: 0 }};
+      }}
       const normalizedBounds = (Number.isFinite(rawBounds.width) && rawBounds.width > 0 && Number.isFinite(rawBounds.height) && rawBounds.height > 0)
         ? rawBounds
         : null;
@@ -781,7 +786,12 @@ def build_html_document(
           return {{ width: viewBox.width, height: viewBox.height }};
         }}
 
-        const box = svg.getBBox();
+        let box;
+        try {{
+          box = svg.getBBox();
+        }} catch (e) {{
+          box = {{ x: 0, y: 0, width: 800, height: 600 }};
+        }}
         return {{ width: box.width || 1, height: box.height || 1 }};
       }};
 
@@ -868,11 +878,15 @@ def build_html_document(
         let count = 0;
 
         for (const related of relatedNodes) {{
-          const box = related.getBBox();
-          if (!Number.isFinite(box.x) || !Number.isFinite(box.y)) continue;
-          totalX += box.x + box.width / 2;
-          totalY += box.y + box.height / 2;
-          count += 1;
+          try {{
+            const box = related.getBBox();
+            if (!Number.isFinite(box.x) || !Number.isFinite(box.y)) continue;
+            totalX += box.x + box.width / 2;
+            totalY += box.y + box.height / 2;
+            count += 1;
+          }} catch (e) {{
+            // Ignore if element is not rendered / hidden
+          }}
         }}
 
         const center = count ? {{ x: totalX / count, y: totalY / count }} : null;
