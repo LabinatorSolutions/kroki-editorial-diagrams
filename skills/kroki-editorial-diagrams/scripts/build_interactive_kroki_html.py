@@ -36,18 +36,32 @@ def soften_svg_background(root: ET.Element) -> None:
         ).strip()
         root.set("style", cleaned)
 
-    view_box = root.get("viewBox")
-    if not view_box:
-        return
-
-    try:
-        _, _, width, height = [
-            float(part) for part in view_box.replace(",", " ").split()
-        ]
-    except ValueError:
-        return
-
     parent_map = {child: parent for parent in root.iter() for child in parent}
+
+    def get_svg_viewbox(element) -> tuple[float, float, float, float] | None:
+        curr = element
+        while curr is not None:
+            tag = curr.tag
+            if tag == f"{{{SVG_NS}}}svg" or tag == "svg":
+                vb = curr.get("viewBox")
+                if vb:
+                    try:
+                        parts = [float(p) for p in vb.replace(",", " ").split()]
+                        if len(parts) == 4:
+                            return parts[0], parts[1], parts[2], parts[3]
+                    except ValueError:
+                        pass
+            curr = parent_map.get(curr)
+        # Fall back to root viewBox
+        vb = root.get("viewBox")
+        if vb:
+            try:
+                parts = [float(p) for p in vb.replace(",", " ").split()]
+                if len(parts) == 4:
+                    return parts[0], parts[1], parts[2], parts[3]
+            except ValueError:
+                pass
+        return None
 
     rects = root.findall(".//svg:rect", NS)
     for rect in rects:
@@ -59,12 +73,17 @@ def soften_svg_background(root: ET.Element) -> None:
         except ValueError:
             continue
 
+        vb_coords = get_svg_viewbox(rect)
+        if not vb_coords:
+            continue
+        min_x, min_y, width, height = vb_coords
+
         style_value = rect.get("style", "")
         fill = rect.get("fill", "").lower()
         has_no_stroke = "stroke:none" in style_value.replace(" ", "").lower()
         fills_background = (
-            rect_x == 0
-            and rect_y == 0
+            abs(rect_x - min_x) <= max(2.0, abs(min_x) * 0.02)
+            and abs(rect_y - min_y) <= max(2.0, abs(min_y) * 0.02)
             and abs(rect_width - width) <= max(2.0, width * 0.02)
             and abs(rect_height - height) <= max(2.0, height * 0.02)
         )
@@ -92,16 +111,26 @@ def soften_svg_background(root: ET.Element) -> None:
         if len(coords) < 4:
             continue
 
+        vb_coords = get_svg_viewbox(polygon)
+        if not vb_coords:
+            continue
+        min_x, min_y, width, height = vb_coords
+
         xs = [x for x, _ in coords]
         ys = [y for _, y in coords]
-        poly_width = max(xs) - min(xs)
-        poly_height = max(ys) - min(ys)
+        poly_min_x = min(xs)
+        poly_min_y = min(ys)
+        poly_width = max(xs) - poly_min_x
+        poly_height = max(ys) - poly_min_y
         fill = polygon.get("fill", "").lower()
         style_value = polygon.get("style", "")
         has_no_stroke = "stroke:none" in style_value.replace(" ", "").lower()
-        fills_background = abs(poly_width - width) <= max(6.0, width * 0.03) and abs(
-            poly_height - height
-        ) <= max(6.0, height * 0.03)
+        fills_background = (
+            abs(poly_min_x - min_x) <= max(6.0, abs(min_x) * 0.03)
+            and abs(poly_min_y - min_y) <= max(6.0, abs(min_y) * 0.03)
+            and abs(poly_width - width) <= max(6.0, width * 0.03)
+            and abs(poly_height - height) <= max(6.0, height * 0.03)
+        )
 
         if fills_background and (fill or has_no_stroke):
             parent = parent_map.get(polygon)
@@ -261,10 +290,14 @@ def annotate_d2(root: ET.Element) -> tuple[int, int]:
             return False
         try:
             padded = s + "=" * (-len(s) % 4)
-            base64.b64decode(padded.encode("ascii"), validate=True)
-            return True
+            decoded = base64.b64decode(padded.encode("ascii"), validate=True)
+            decoded_str = decoded.decode("utf-8")
+            if not decoded_str:
+                return False
+            return all(c.isprintable() or c in "\t\r\n" for c in decoded_str)
         except Exception:
             return False
+
 
     def decode_base64(s: str) -> str:
         padded = s + "=" * (-len(s) % 4)
@@ -804,6 +837,7 @@ def build_html_document(
       let dragOriginY = 0;
       let shouldAutoFitOnResize = true;
       let selectedNodeId = null;
+      let hasDragged = false;
 
       if (normalizedBounds) {{
         svg.style.transform = `translate(${{-normalizedBounds.x}}px, ${{-normalizedBounds.y}}px)`;
@@ -1009,18 +1043,21 @@ def build_html_document(
 
       for (const node of nodes) {{
         node.addEventListener("click", (event) => {{
+          if (hasDragged) return;
           event.stopPropagation();
           focusNode(node.dataset.nodeId);
         }});
       }}
 
       svg.addEventListener("click", (event) => {{
+        if (hasDragged) return;
         const clickedNode = event.target.closest("[data-node-id]");
         if (clickedNode) return;
         resetState();
       }});
 
       viewport.addEventListener("click", (event) => {{
+        if (hasDragged) return;
         if (!event.target.closest("[data-node-id]")) {{
           resetState();
         }}
@@ -1054,11 +1091,13 @@ def build_html_document(
       }}, {{ passive: false }});
 
       viewport.addEventListener("pointerdown", (event) => {{
-        const wantsPan = event.button === 1 || (event.button === 0 && isSpacePressed) || event.pointerType === "touch";
+        const isOverNode = event.target.closest("[data-node-id]");
+        const wantsPan = event.button === 1 || (event.button === 0 && (isSpacePressed || !isOverNode)) || event.pointerType === "touch";
         if (!wantsPan) return;
 
         event.preventDefault();
         isDragging = true;
+        hasDragged = false;
         activePointerId = event.pointerId;
         dragStartX = event.clientX;
         dragStartY = event.clientY;
@@ -1070,8 +1109,13 @@ def build_html_document(
 
       viewport.addEventListener("pointermove", (event) => {{
         if (!isDragging || event.pointerId !== activePointerId) return;
-        translateX = dragOriginX + (event.clientX - dragStartX);
-        translateY = dragOriginY + (event.clientY - dragStartY);
+        const dx = event.clientX - dragStartX;
+        const dy = event.clientY - dragStartY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {{
+          hasDragged = true;
+        }}
+        translateX = dragOriginX + dx;
+        translateY = dragOriginY + dy;
         shouldAutoFitOnResize = false;
         applyTransform();
       }});
@@ -1082,6 +1126,9 @@ def build_html_document(
         isDragging = false;
         activePointerId = null;
         viewport.classList.remove("is-dragging");
+        setTimeout(() => {{
+          hasDragged = false;
+        }}, 0);
       }};
 
       viewport.addEventListener("pointerup", endDrag);
