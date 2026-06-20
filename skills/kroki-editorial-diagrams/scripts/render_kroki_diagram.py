@@ -158,7 +158,7 @@ def main() -> int:
         "--timeout",
         type=int,
         default=30,
-        help="curl --max-time value in seconds (default: 30). Increase for slow self-hosted instances.",
+        help="Request timeout value in seconds (default: 30). Increase for slow self-hosted instances.",
     )
     args = parser.parse_args()
 

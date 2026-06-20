@@ -253,7 +253,7 @@ def test_extended_engines_present():
     assert extended.issubset(set(SUPPORTED_ENGINES))
 
 
-def test_diagram_option_curl_headers():
+def test_diagram_option_urlopen_headers():
     mock_response = MagicMock()
     mock_response.read.return_value = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
     mock_response.__enter__.return_value = mock_response
@@ -279,7 +279,7 @@ def test_diagram_option_no_options_produces_no_extra_headers():
         assert not any(key.startswith("Kroki-diagram-options") for key in req.headers)
 
 
-def test_timeout_is_passed_to_curl():
+def test_timeout_is_passed_to_urlopen():
     mock_response = MagicMock()
     mock_response.read.return_value = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
     mock_response.__enter__.return_value = mock_response
@@ -287,6 +287,24 @@ def test_timeout_is_passed_to_curl():
     with patch("urllib.request.urlopen", return_value=mock_response) as mock_urlopen:
         render("plantuml", "svg", "@startuml\n@enduml", timeout=90)
         assert mock_urlopen.call_args[1]["timeout"] == 90
+
+
+def test_render_raises_runtime_error_on_http_error():
+    import urllib.error
+    mock_fp = MagicMock()
+    mock_fp.read.return_value = b"Custom Kroki Error Message"
+    err = urllib.error.HTTPError("http://kroki.io/d2/svg", 400, "Bad Request", {}, mock_fp)
+    with patch("urllib.request.urlopen", side_effect=err):
+        with pytest.raises(RuntimeError) as exc_info:
+            render("d2", "svg", "direction: down")
+        assert "Custom Kroki Error Message" in str(exc_info.value)
+
+
+def test_render_raises_runtime_error_on_general_exception():
+    with patch("urllib.request.urlopen", side_effect=Exception("Connection timed out")):
+        with pytest.raises(RuntimeError) as exc_info:
+            render("d2", "svg", "direction: down")
+        assert "Request failed: Connection timed out" in str(exc_info.value)
 
 
 # ---------------------------------------------------------------------------

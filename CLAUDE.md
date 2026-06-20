@@ -63,7 +63,7 @@ This repo is a Claude Code / Antigravity IDE (Gemini CLI) **skill** — an LLM i
 
 ### Python scripts (three cooperating modules)
 
-**`render_kroki_diagram.py`** — the CLI. It reads the source file, POSTs to the Kroki API via `curl` (always `Content-Type: text/plain; charset=utf-8` to handle `%` characters safely), writes the rendered output, then calls the other two modules. Supports `--diagram-option key=value` (repeatable) to pass engine-specific Kroki options as `Kroki-Diagram-Options-*` headers, `--format jpg` (in addition to svg/png/pdf), and `--timeout` for slow self-hosted instances. Index auto-build fires only when the output filename is exactly `rendered.svg`; use `--skip-index` to suppress it.
+**`render_kroki_diagram.py`** — the CLI. It reads the source file, POSTs to the Kroki API via standard Python `urllib` (always `Content-Type: text/plain; charset=utf-8` to handle `%` characters safely), writes the rendered output, then calls the other two modules. Supports `--diagram-option key=value` (repeatable) to pass engine-specific Kroki options as `Kroki-Diagram-Options-*` headers, `--format jpg` (in addition to svg/png/pdf), and `--timeout` for slow self-hosted instances. Index auto-build fires only when the output filename is exactly `rendered.svg`; use `--skip-index` to suppress it.
 
 **`build_interactive_kroki_html.py`** — wraps a rendered SVG in an HTML page with click-to-highlight node focus, animated directional edge flows, and pan/zoom. Annotates the raw SVG with `data-node-id`, `data-edge-source`, `data-edge-target` attributes. Uses `defusedxml` for XXE-safe SVG parsing. Interactive tier varies by engine: `full` (PlantUML, C4-PlantUML, Graphviz, D2), `best-effort` (Mermaid, ERD), `limited` (BPMN).
 

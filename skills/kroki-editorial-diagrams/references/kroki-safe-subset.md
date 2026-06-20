@@ -74,7 +74,7 @@ Content-Type: text/plain; charset=utf-8
 <diagram source here>
 ```
 
-This is what `render_kroki_diagram.py` does internally via `curl`. The `%` character trap is handled safely because `text/plain` prevents URL-decoding of percent signs.
+This is what `render_kroki_diagram.py` does internally via standard Python `urllib.request`. The `%` character trap is handled safely because `text/plain` prevents URL-decoding of percent signs.
 
 ### POST — JSON Body (alternative)
 

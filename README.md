@@ -16,7 +16,7 @@ Maintained by [Labinator.com](https://labinator.com).
 4. **Interactive SVG Viewer** — Click-to-highlight node focus, animated edge flow, dimmed inactive elements, pan/zoom with keyboard shortcuts. Full interactivity on D2, PlantUML, C4-PlantUML, Graphviz, and Structurizr; best-effort on Mermaid and ERD; limited/pan-zoom on all others.
 5. **Automated Gallery Index** — Generates a `index.html` card-deck from all diagrams in a folder, with grid/list toggle and per-engine color coding.
 6. **Narrow & Tall Layout Standard** — Max ~800px width, vertical flows enforced across all engines to prevent horizontal scrolling.
-7. **Robust Error Handling** — `curl -f` detects HTTP 4xx/5xx from Kroki. Configurable timeout (`--timeout`). Shareable Kroki URL printed on failure for manual debugging.
+7. **Robust Error Handling** — Detects HTTP 4xx/5xx from Kroki via `urllib.error.HTTPError`. Configurable timeout (`--timeout`). Shareable Kroki URL printed on failure for manual debugging.
 8. **Secure SVG Parsing** — Uses `defusedxml` to prevent XXE injection when wrapping SVG files in the interactive viewer.
 9. **Test Suite** — 36 pytest tests covering engine registration, URL encoding, pluralization, SVG annotation, edge label parsing, sequence/Mermaid/ERD/BPMN annotation, engine inference from source files, diagram options curl headers, background rect removal, and HTML generation.
 
@@ -89,7 +89,7 @@ kroki-editorial-diagrams/
         │   ├── build_diagram_index.py     # Gallery index generator
         │   ├── requirements.txt           # Python dependencies (defusedxml)
         │   └── tests/
-        │       └── test_scripts.py        # pytest suite (10 tests)
+        │       └── test_scripts.py        # pytest suite (36 tests)
         └── references/
             ├── style-guide.md
             ├── engine-matrix.md

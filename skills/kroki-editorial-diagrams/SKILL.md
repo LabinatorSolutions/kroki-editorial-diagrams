@@ -1,7 +1,7 @@
 ---
 name: kroki-editorial-diagrams
 description: Create premium, responsive, interactive diagrams (flowcharts, sequence, architecture, data models, timing, data visualization) with an elegant editorial design aesthetic. Chooses the optimal layout engine (PlantUML, C4, D2, Mermaid, Graphviz, Structurizr, WaveDrom, Vega-Lite, ERD, BPMN, and more) and exports to PNG/SVG, adding interactive edge flows and visual galleries.
-allowed-tools: Read, Write, Grep, Glob, Bash(curl *), Bash(cat *), Bash(mkdir *), Bash(ls *), Bash(python3 *)
+allowed-tools: Read, Write, Grep, Glob, Bash(cat *), Bash(mkdir *), Bash(ls *), Bash(python3 *)
 ---
 
 # Kroki Editorial Diagrams Skill
