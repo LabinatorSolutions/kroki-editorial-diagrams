@@ -305,13 +305,24 @@ def build_html_document(
 
     # Editorial colors matching the design system
     _engine_colors = {
-        "plantuml": ("235, 108, 54", "#eb6c36"),  # Tangerine accent
-        "c4plantuml": ("46, 90, 168", "#2e5aa8"),  # Link blue
-        "d2": ("79, 93, 117", "#4f5d75"),  # Slate blue (structural)
-        "graphviz": ("79, 93, 117", "#4f5d75"),  # Slate blue
-        "mermaid": ("122, 131, 153", "#7a8399"),  # Muted slate
-        "erd": ("191, 192, 192", "#bfc0c0"),  # Silver
-        "bpmn": ("100, 120, 140", "#64788c"),  # Steel blue-grey
+        "plantuml":    ("235, 108, 54",  "#eb6c36"),
+        "c4plantuml":  ("46, 90, 168",   "#2e5aa8"),
+        "d2":          ("79, 93, 117",   "#4f5d75"),
+        "graphviz":    ("79, 93, 117",   "#4f5d75"),
+        "mermaid":     ("122, 131, 153", "#7a8399"),
+        "erd":         ("191, 192, 192", "#bfc0c0"),
+        "bpmn":        ("100, 120, 140", "#64788c"),
+        "structurizr": ("46, 90, 168",   "#2e5aa8"),
+        "nomnoml":     ("79, 93, 117",   "#4f5d75"),
+        "wavedrom":    ("122, 131, 153", "#7a8399"),
+        "vega":        ("46, 90, 168",   "#2e5aa8"),
+        "vegalite":    ("46, 90, 168",   "#2e5aa8"),
+        "ditaa":       ("191, 192, 192", "#bfc0c0"),
+        "svgbob":      ("191, 192, 192", "#bfc0c0"),
+        "goat":        ("191, 192, 192", "#bfc0c0"),
+        "pikchr":      ("122, 131, 153", "#7a8399"),
+        "excalidraw":  ("235, 108, 54",  "#eb6c36"),
+        "wireviz":     ("79, 93, 117",   "#4f5d75"),
     }
     _tool_rgb, _tool_hex = _engine_colors.get(engine, ("235, 108, 54", "#eb6c36"))
 
@@ -993,7 +1004,7 @@ def build_html_document(
       }}, {{ passive: false }});
 
       viewport.addEventListener("pointerdown", (event) => {{
-        const wantsPan = event.button === 1 || (event.button === 0 && isSpacePressed);
+        const wantsPan = event.button === 1 || (event.button === 0 && isSpacePressed) || event.pointerType === "touch";
         if (!wantsPan) return;
 
         event.preventDefault();

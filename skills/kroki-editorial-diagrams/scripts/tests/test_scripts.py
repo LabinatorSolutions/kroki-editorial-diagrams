@@ -412,3 +412,24 @@ def test_soften_svg_background_preserves_non_background_rects():
     # Background rect removed; content rect kept
     assert len(rects_after) == 1
     assert rects_after[0].get("x") == "10"
+
+
+def test_build_diagram_index_with_corrupted_meta(tmp_path):
+    artifact = tmp_path / "corrupted-meta"
+    artifact.mkdir()
+    (artifact / "rendered.svg").write_text("<svg></svg>")
+    (artifact / META_FILENAME).write_text("{invalid-json}")
+    index = build_diagram_index(root=tmp_path)
+    assert index.exists()
+    content = index.read_text()
+    assert "Corrupted Meta" in content
+
+
+def test_render_with_missing_input_file(capsys):
+    import render_kroki_diagram
+    with patch("sys.argv", ["render_kroki_diagram.py", "--engine", "d2", "--input", "nonexistent_file.d2"]):
+        ret = render_kroki_diagram.main()
+        assert ret == 1
+        captured = capsys.readouterr()
+        assert "Error: Input file 'nonexistent_file.d2' does not exist." in captured.err
+

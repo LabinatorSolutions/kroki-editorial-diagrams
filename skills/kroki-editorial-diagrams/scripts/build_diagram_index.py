@@ -56,7 +56,10 @@ def load_artifact_entry(artifact_dir: pathlib.Path) -> dict[str, str] | None:
     meta_path = artifact_dir / META_FILENAME
     meta: dict[str, str] = {}
     if meta_path.exists():
-        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            pass
 
     title = meta.get("title") or prettify_name(artifact_dir.name)
     engine = meta.get("engine") or infer_engine_from_source(artifact_dir)

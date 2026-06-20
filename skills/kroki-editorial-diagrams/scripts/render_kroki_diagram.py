@@ -172,6 +172,9 @@ def main() -> int:
         diagram_options.append((key.strip(), value.strip()))
 
     input_path = pathlib.Path(args.input)
+    if not input_path.exists():
+        print(f"Error: Input file '{args.input}' does not exist.", file=sys.stderr)
+        return 1
     source = input_path.read_text(encoding="utf-8")
     url = build_kroki_url(args.engine, args.format, source, endpoint=args.kroki_endpoint)
 
@@ -197,7 +200,7 @@ def main() -> int:
 
     # Scan up to 4096 bytes for the SVG tag to handle large XML preambles safely
     text_probe = rendered[:4096].decode("utf-8", errors="ignore")
-    if "<svg" not in text_probe and args.format == "svg":
+    if "<svg" not in text_probe.lower() and args.format == "svg":
         print("Render failed: Kroki did not return SVG output", file=sys.stderr)
         print(text_probe.strip(), file=sys.stderr)
         print(f"Kroki URL: {url}", file=sys.stderr)
