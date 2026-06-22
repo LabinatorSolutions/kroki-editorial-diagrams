@@ -18,10 +18,8 @@ You are an elite, modern technical designer. Your job is to take the user's diag
 4. **Layout Planning**: Enforce the non-negotiable **Narrow & Tall** vertical layout standard (maximum target width ~800px) from `references/layout-control.md` to prevent horizontal scrolling on standard viewports.
 5. **Draft Diagram Source**: Generate the clean diagram code, applying the core visual guidelines from `references/style-guide.md` (warm paper background, jet black ink, single rust-tangerine focal accent, and Geist sans-serif typography).
 6. **Run Kroki Exporter**: Execute `python3 scripts/render_kroki_diagram.py` to POST to the Kroki API and generate the `.svg` asset (default). PNG is generated with a second call using `--format png --skip-index`; see execution commands below.
-7. **Generate Interactivity & Gallery Index**: Let the Python runner compile:
-    * An **`interactive.html`** containing click-to-highlight node selection, dimming of unrelated systems, and animated directional edge flows.
-    * A consolidated **`index.html`** directory index page that presents a clean card-deck gallery of all diagrams in the base path.
-8. **Output Summary**: Return the clickable file links, the Kroki shareable URL, a brief analysis of design decisions made, and the diagram source in a fenced code block.
+7. **Generate Interactivity & Gallery Index**: Optionally pass `--interactive-output <path>.html` to generate a click-to-highlight interactive overlay with animated directional edge flows. This is opt-in — omitting the flag skips HTML generation. The gallery `index.html` auto-rebuilds only when the output file is named exactly `rendered.svg`; any other name silently skips indexing.
+8. **Output Summary**: Return the clickable file links, a brief analysis of design decisions made, and the diagram source in a fenced code block. To obtain a shareable Kroki URL, run a second call with `--print-url-only` (no network call, no render).
 
 ---
 
@@ -122,15 +120,28 @@ python3 scripts/render_kroki_diagram.py \
   --timeout 60
 ```
 
-If offline or only compiling shareable URL:
+Second-pass PNG/JPG after SVG (use `--skip-index` to avoid redundant gallery rebuild):
 
 ```bash
-# Print GET URL only (no network call)
+# PNG after SVG — skip the index rebuild since SVG pass already ran it
+python3 scripts/render_kroki_diagram.py \
+  --engine d2 --format png --skip-index \
+  --input docs/diagrams/system-arch/source.d2 \
+  --output docs/diagrams/system-arch/rendered.png
+# JPG is also supported: --format jpg
+```
+
+Shareable URL only (no network call, no render):
+
+```bash
+# Print GET URL only (offline / debug)
 python3 scripts/render_kroki_diagram.py \
   --engine mermaid \
   --input docs/diagrams/flow/source.mmd \
   --print-url-only
 ```
+
+> **Output naming invariant**: `--output` MUST end with `rendered.svg` for the gallery index to auto-rebuild. Any other filename silently skips indexing. Use `--skip-index` when rendering non-SVG formats to suppress the (already-run) index rebuild.
 
 ---
 

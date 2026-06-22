@@ -37,6 +37,18 @@ _SOURCE_SUFFIX_MAP: dict[str, str] = {
     ".bob": "svgbob",
     ".pikchr": "pikchr",
     ".wireviz": "wireviz",
+    ".goat": "goat",
+    ".bytefield": "bytefield",
+    ".actdiag": "actdiag",
+    ".blockdiag": "blockdiag",
+    ".seqdiag": "seqdiag",
+    ".nwdiag": "nwdiag",
+    ".packetdiag": "packetdiag",
+    ".rackdiag": "rackdiag",
+    ".symbolator": "symbolator",
+    ".uxf": "umlet",
+    ".excalidraw": "excalidraw",
+    ".drawio": "diagramsnet",
 }
 
 

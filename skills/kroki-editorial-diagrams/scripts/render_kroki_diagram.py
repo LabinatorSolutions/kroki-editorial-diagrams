@@ -9,7 +9,7 @@ import sys
 import zlib
 
 # Robust sibling import resolution
-sys.path.append(str(pathlib.Path(__file__).parent.resolve()))
+sys.path.insert(0, str(pathlib.Path(__file__).parent.resolve()))
 from build_diagram_index import META_FILENAME, build_diagram_index
 from build_interactive_kroki_html import build_interactive_html_file
 
