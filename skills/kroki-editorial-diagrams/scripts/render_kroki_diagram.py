@@ -101,6 +101,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Render diagrams through Kroki with premium formatting."
     )
+    parser.add_argument("--version", action="version", version="%(prog)s 1.1.0")
     parser.add_argument(
         "--engine",
         required=True,

@@ -537,6 +537,7 @@ def build_diagram_index(root: pathlib.Path, title: str | None = None) -> pathlib
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build a premium index.html catalog for a directory of diagram artifacts.")
+    parser.add_argument("--version", action="version", version="%(prog)s 1.1.0")
     parser.add_argument("--root", required=True, help="Directory containing one artifact folder per diagram.")
     parser.add_argument("--title", help="Optional page title.")
     args = parser.parse_args()

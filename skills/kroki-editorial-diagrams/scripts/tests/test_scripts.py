@@ -509,3 +509,45 @@ def test_build_diagram_index_excludes_hidden_dirs(tmp_path):
     assert "Hidden Git" not in content
 
 
+# ---------------------------------------------------------------------------
+# build_diagram_index — infer_engine_from_source
+# ---------------------------------------------------------------------------
+
+def test_infer_engine_from_source_known_extensions(tmp_path):
+    cases = [
+        (".puml", "plantuml"), (".pu", "plantuml"), (".c4puml", "c4plantuml"),
+        (".mmd", "mermaid"), (".dot", "graphviz"), (".erd", "erd"),
+        (".d2", "d2"), (".bpmn", "bpmn"),
+        (".structurizr", "structurizr"), (".dsl", "structurizr"),
+        (".nomnoml", "nomnoml"),
+        (".vg", "vega"), (".vega", "vega"), (".vgl", "vegalite"), (".vegalite", "vegalite"),
+        (".wsd", "wavedrom"), (".wavedrom", "wavedrom"),
+        (".ditaa", "ditaa"), (".svgbob", "svgbob"), (".bob", "svgbob"),
+        (".pikchr", "pikchr"), (".wireviz", "wireviz"),
+        (".goat", "goat"), (".bytefield", "bytefield"),
+        (".actdiag", "actdiag"), (".blockdiag", "blockdiag"),
+        (".seqdiag", "seqdiag"), (".nwdiag", "nwdiag"),
+        (".packetdiag", "packetdiag"), (".rackdiag", "rackdiag"),
+        (".symbolator", "symbolator"), (".uxf", "umlet"),
+        (".excalidraw", "excalidraw"), (".drawio", "diagramsnet"),
+    ]
+    for ext, expected in cases:
+        d = tmp_path / f"test-{ext.strip('.')}"
+        d.mkdir()
+        (d / f"source{ext}").write_text("")
+        assert infer_engine_from_source(d) == expected, f"Failed for extension {ext!r}"
+
+
+def test_infer_engine_from_source_unknown_extension_falls_back(tmp_path):
+    d = tmp_path / "unknown"
+    d.mkdir()
+    (d / "source.xyz").write_text("")
+    assert infer_engine_from_source(d) == "diagram"
+
+
+def test_infer_engine_from_source_no_source_file_falls_back(tmp_path):
+    d = tmp_path / "empty"
+    d.mkdir()
+    assert infer_engine_from_source(d) == "diagram"
+
+
