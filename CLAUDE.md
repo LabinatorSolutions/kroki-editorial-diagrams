@@ -69,11 +69,11 @@ This repo is a Claude Code / Antigravity IDE (Gemini CLI) **skill** — an LLM i
 
 `scripts/requirements.txt` lists the single external dependency (`defusedxml`). Use `pip install -r skills/kroki-editorial-diagrams/scripts/requirements.txt` when setting up CI or a virtualenv.
 
-### Python scripts (three cooperating modules)
+### Python scripts
 
 **`render_kroki_diagram.py`** — the CLI. It reads the source file, POSTs to the Kroki API via standard Python `urllib` (always `Content-Type: text/plain; charset=utf-8` to handle `%` characters safely), writes the rendered output, then calls the other two modules. Supports `--diagram-option key=value` (repeatable) to pass engine-specific Kroki options as `Kroki-Diagram-Options-*` headers, `--format jpg` (in addition to svg/png/pdf), and `--timeout` for slow self-hosted instances. Index auto-build fires only when the output filename is exactly `rendered.svg`; use `--skip-index` to suppress it.
 
-**`build_interactive_kroki_html.py`** — wraps a rendered SVG in an HTML page with click-to-highlight node focus, animated directional edge flows, and pan/zoom. Annotates the raw SVG with `data-node-id`, `data-edge-source`, `data-edge-target` attributes. Uses `defusedxml` for XXE-safe SVG parsing. Interactive tier varies by engine: `full` (PlantUML, C4-PlantUML, Graphviz, D2), `best-effort` (Mermaid, ERD), `limited` (BPMN).
+**`build_interactive_kroki_html.py`** — wraps a rendered SVG in an HTML page with click-to-highlight node focus, animated directional edge flows, and pan/zoom. Annotates the raw SVG with `data-node-id`, `data-edge-source`, `data-edge-target` attributes. Uses `defusedxml` for XXE-safe SVG parsing. Interactive tier varies by engine: `full` (PlantUML, C4-PlantUML, Graphviz, D2*, Structurizr*); `best-effort` (Mermaid, ERD); `limited` (BPMN and ~20 others — stderr note printed). *D2 and Structurizr fall back to `best-effort` when no edges are detected.
 
 **`build_diagram_index.py`** — scans a root folder for subfolders containing `rendered.svg` + `.diagram-meta.json`, then generates a dark-mode gallery `index.html`. Metadata is written by the render script after each successful render. The `.diagram-meta.json` schema:
 
@@ -83,9 +83,13 @@ This repo is a Claude Code / Antigravity IDE (Gemini CLI) **skill** — an LLM i
   "svg_href": "rendered.svg", "tier": "full", "folder": "architecture-d2" }
 ```
 
+**`_svg_utils.py`** — private module: SVG namespace constants (`SVG_NS`, `NS`), `clean_svg_text`, `append_class`, `soften_svg_background`. Imported by `_svg_annotators.py`.
+
+**`_svg_annotators.py`** — private module: all annotation functions (`annotate_graphviz_like`, `annotate_mermaid`, `annotate_d2`, `annotate_sequence`, `annotate_plantuml_description`) and the `annotate_svg` dispatcher. Engines without a dedicated annotator fall through to `limited` tier; `build_interactive_html_file` prints a stderr warning in that case.
+
 ### Reference docs
 
-`skills/kroki-editorial-diagrams/references/` holds eight markdown files loaded by the skill during diagram generation:
+`skills/kroki-editorial-diagrams/references/` holds nine markdown files loaded by the skill during diagram generation:
 
 - `engine-matrix.md` — engine trade-offs and ideal scenarios
 - `engine-style-templates.md` — copy-paste aesthetic scaffolds per engine (includes BPMN no-styling warning)
@@ -111,6 +115,6 @@ This repo is a Claude Code / Antigravity IDE (Gemini CLI) **skill** — an LLM i
 - C4-PlantUML self-hosted: use `!include <C4Container>` (local stdlib), not the raw GitHub URL — the GitHub URL fails on Kroki's default SECURE mode.
 - Companion-server engines (Mermaid, BPMN, WaveDrom, Vega/Vega-Lite, Excalidraw, Diagrams.net) require separate Docker containers on self-hosted Kroki. On public `kroki.io` they work transparently.
 - **Data Privacy & Public Gateway**: By default, rendering requests are transmitted to the public gateway `https://kroki.io`. Because diagram source text may contain sensitive architecture details, schema structures, or proprietary IP, you should configure a self-hosted Kroki server and set `--kroki-endpoint` when diagramming private, confidential, or sensitive systems.
-- `build_interactive_kroki_html.py` engine dispatch: Graphviz/D2/ERD/Structurizr use `annotate_graphviz_like()`; Mermaid uses `annotate_mermaid()`; PlantUML sequence uses `annotate_sequence()`; other PlantUML/C4 uses `annotate_plantuml_description()`. All other engines fall through to `limited` tier (no node/edge annotation).
+- `_svg_annotators.py` engine dispatch: Graphviz/ERD use `annotate_graphviz_like()`; D2 uses `annotate_d2()` (base64-decoded class heuristic); Structurizr uses `annotate_plantuml_description()`; Mermaid uses `annotate_mermaid()`; PlantUML sequence uses `annotate_sequence()`; other PlantUML/C4 use `annotate_plantuml_description()`. All other engines fall through to `limited` tier — `build_interactive_html_file` prints a stderr warning.
 - Interactive viewer keyboard shortcuts (non-obvious): `Space`+drag = pan; `+`/`-` = zoom; `0` = fit; `1` = 100%; arrow keys = pan by 60px.
 - `build_diagram_index.py` infers engine from `source.*` file extension via `_SOURCE_SUFFIX_MAP` when `.diagram-meta.json` is absent (e.g., `.dsl` and `.structurizr` both map to `structurizr`).
