@@ -843,6 +843,11 @@ def build_interactive_html_file(
     engine: str, svg_text: str, output_path: pathlib.Path, title: str
 ) -> dict[str, str | int]:
     annotated_svg, metadata = annotate_svg(engine=engine, svg_text=svg_text)
+    if metadata["tier"] == "limited":
+        print(
+            f"Note: {engine} uses limited interactive tier — click-to-highlight unavailable.",
+            file=sys.stderr,
+        )
     html = build_html_document(svg_markup=annotated_svg, title=title, metadata=metadata)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")

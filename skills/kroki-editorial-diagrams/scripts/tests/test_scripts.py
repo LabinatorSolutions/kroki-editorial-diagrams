@@ -551,3 +551,265 @@ def test_infer_engine_from_source_no_source_file_falls_back(tmp_path):
     assert infer_engine_from_source(d) == "diagram"
 
 
+# ---------------------------------------------------------------------------
+# _svg_annotators — annotate_graphviz_like
+# ---------------------------------------------------------------------------
+
+def _parse(svg: str):
+    import xml.etree.ElementTree as ET
+    ET.register_namespace("", "http://www.w3.org/2000/svg")
+    return safe_fromstring(svg)
+
+
+def test_annotate_graphviz_like_nodes_and_edges():
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        '<g class="node"><title>A</title><ellipse/></g>'
+        '<g class="node"><title>B</title><ellipse/></g>'
+        '<g class="edge"><title>A-&gt;B</title><path/></g>'
+        '</svg>'
+    )
+    from _svg_annotators import annotate_graphviz_like
+    root = _parse(svg)
+    nodes, edges = annotate_graphviz_like(root)
+    assert nodes == 2
+    assert edges == 1
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    node_groups = root.findall('.//svg:g[@data-node-id]', ns)
+    assert {g.get("data-node-id") for g in node_groups} == {"A", "B"}
+    edge_group = root.find('.//svg:g[@data-edge-source]', ns)
+    assert edge_group.get("data-edge-source") == "A"
+    assert edge_group.get("data-edge-target") == "B"
+    assert edge_group.get("data-edge-kind") == "directed"
+
+
+def test_annotate_graphviz_like_undirected_edge():
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        '<g class="edge"><title>X--Y</title><path/></g>'
+        '</svg>'
+    )
+    from _svg_annotators import annotate_graphviz_like
+    root = _parse(svg)
+    _, edges = annotate_graphviz_like(root)
+    assert edges == 1
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    edge = root.find('.//svg:g[@data-edge-source]', ns)
+    assert edge.get("data-edge-kind") == "undirected"
+
+
+def test_annotate_graphviz_like_no_title_skipped():
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        '<g class="node"></g>'
+        '</svg>'
+    )
+    from _svg_annotators import annotate_graphviz_like
+    root = _parse(svg)
+    nodes, edges = annotate_graphviz_like(root)
+    assert nodes == 0 and edges == 0
+
+
+# ---------------------------------------------------------------------------
+# _svg_annotators — annotate_mermaid
+# ---------------------------------------------------------------------------
+
+def test_annotate_mermaid_nodes():
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        '<g class="node" id="flowchart-Alpha-0"><rect/></g>'
+        '<g class="node" id="flowchart-Beta-1"><rect/></g>'
+        '</svg>'
+    )
+    from _svg_annotators import annotate_mermaid
+    root = _parse(svg)
+    nodes, edges = annotate_mermaid(root)
+    assert nodes == 2
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    ids = {g.get("data-node-id") for g in root.findall('.//svg:g[@data-node-id]', ns)}
+    assert ids == {"Alpha", "Beta"}
+
+
+def test_annotate_mermaid_edge():
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        '<path class="flowchart-link" id="L_Alpha_Beta_0" marker-end="url(#arrow)"/>'
+        '</svg>'
+    )
+    from _svg_annotators import annotate_mermaid
+    root = _parse(svg)
+    _, edges = annotate_mermaid(root)
+    assert edges == 1
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    path = root.find('.//svg:path[@data-edge-source]', ns)
+    assert path.get("data-edge-source") == "Alpha"
+    assert path.get("data-edge-target") == "Beta"
+    assert path.get("data-edge-kind") == "directed"
+
+
+# ---------------------------------------------------------------------------
+# _svg_annotators — annotate_d2
+# ---------------------------------------------------------------------------
+
+def _b64(s: str) -> str:
+    return base64.b64encode(s.encode()).decode().rstrip("=")
+
+
+def test_annotate_d2_node():
+    cls = _b64("MyNode")
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        f'<g class="{cls}"><rect/></g>'
+        f'</svg>'
+    )
+    from _svg_annotators import annotate_d2
+    root = _parse(svg)
+    nodes, edges = annotate_d2(root)
+    assert nodes == 1
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    g = root.find('.//svg:g[@data-node-id]', ns)
+    assert g.get("data-node-id") == "MyNode"
+
+
+def test_annotate_d2_edge():
+    cls = _b64("(Source -> Target)")
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        f'<g class="{cls}"><path/></g>'
+        f'</svg>'
+    )
+    from _svg_annotators import annotate_d2
+    root = _parse(svg)
+    nodes, edges = annotate_d2(root)
+    assert edges == 1
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    g = root.find('.//svg:g[@data-edge-source]', ns)
+    assert g.get("data-edge-source") == "Source"
+    assert g.get("data-edge-target") == "Target"
+    assert g.get("data-edge-kind") == "directed"
+
+
+# ---------------------------------------------------------------------------
+# _svg_annotators — annotate_sequence
+# ---------------------------------------------------------------------------
+
+def test_annotate_sequence_participants_and_messages():
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        '<g class="participant-head" data-entity-uid="Alice"><rect/></g>'
+        '<g class="participant-head" data-entity-uid="Bob"><rect/></g>'
+        '<g class="message" data-entity-1="Alice" data-entity-2="Bob"><path/></g>'
+        '</svg>'
+    )
+    from _svg_annotators import annotate_sequence
+    root = _parse(svg)
+    nodes, edges = annotate_sequence(root)
+    assert nodes == 2
+    assert edges == 1
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    edge = root.find('.//svg:g[@data-edge-source]', ns)
+    assert edge.get("data-edge-kind") == "directed"
+
+
+# ---------------------------------------------------------------------------
+# _svg_annotators — annotate_plantuml_description
+# ---------------------------------------------------------------------------
+
+def test_annotate_plantuml_description_entities_and_links():
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        '<g class="entity" id="ClassA"><rect/></g>'
+        '<g class="entity" id="ClassB"><rect/></g>'
+        '<g class="link" data-entity-1="ClassA" data-entity-2="ClassB"><path/></g>'
+        '</svg>'
+    )
+    from _svg_annotators import annotate_plantuml_description
+    root = _parse(svg)
+    nodes, edges = annotate_plantuml_description(root)
+    assert nodes == 2
+    assert edges == 1
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    ids = {g.get("data-node-id") for g in root.findall('.//svg:g[@data-node-id]', ns)}
+    assert ids == {"ClassA", "ClassB"}
+
+
+# ---------------------------------------------------------------------------
+# _svg_annotators — annotate_svg dispatcher
+# ---------------------------------------------------------------------------
+
+def test_annotate_svg_graphviz_returns_full_tier():
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        '<g class="node"><title>X</title></g>'
+        '<g class="edge"><title>X-&gt;Y</title></g>'
+        '</svg>'
+    )
+    annotated, meta = annotate_svg(engine="graphviz", svg_text=svg)
+    assert meta["tier"] == "full"
+    assert meta["nodes"] == 1
+    assert meta["edges"] == 1
+    assert "data-interactive-engine" in annotated
+
+
+def test_annotate_svg_limited_tier_for_unknown_engine():
+    svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"></svg>'
+    _, meta = annotate_svg(engine="ditaa", svg_text=svg)
+    assert meta["tier"] == "limited"
+    assert meta["nodes"] == 0
+    assert meta["edges"] == 0
+
+
+# ---------------------------------------------------------------------------
+# _svg_utils — soften_svg_background
+# ---------------------------------------------------------------------------
+
+def test_soften_svg_background_removes_full_coverage_rect():
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">'
+        '<g>'
+        '<rect x="0" y="0" width="200" height="100" fill="white"/>'
+        '<ellipse cx="100" cy="50" rx="40" ry="20"/>'
+        '</g>'
+        '</svg>'
+    )
+    root = _parse(svg)
+    soften_svg_background(root)
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    rects = root.findall('.//svg:rect', ns)
+    assert len(rects) == 0
+
+
+def test_soften_svg_background_keeps_partial_rect():
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">'
+        '<g>'
+        '<rect x="10" y="10" width="100" height="50" fill="white"/>'
+        '</g>'
+        '</svg>'
+    )
+    root = _parse(svg)
+    soften_svg_background(root)
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    rects = root.findall('.//svg:rect', ns)
+    assert len(rects) == 1
+
+
+def test_soften_svg_background_removes_style_background():
+    svg = '<svg xmlns="http://www.w3.org/2000/svg" style="background: white;" viewBox="0 0 100 100"></svg>'
+    root = _parse(svg)
+    soften_svg_background(root)
+    assert "background" not in (root.get("style") or "")
+
+
+def test_soften_svg_background_no_viewbox_skips_rect_removal():
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg">'
+        '<rect x="0" y="0" width="200" height="100" fill="white"/>'
+        '</svg>'
+    )
+    root = _parse(svg)
+    soften_svg_background(root)
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    # No viewBox → rect cannot be confirmed as background → left alone
+    rects = root.findall('.//svg:rect', ns)
+    assert len(rects) == 1
