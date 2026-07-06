@@ -19,3 +19,6 @@ node_modules/
 **/rendered.png
 **/rendered.svg
 **/index.html
+
+# ...but DO ship the committed showcase examples under docs/examples/
+!docs/examples/**

@@ -18,7 +18,7 @@ Maintained by [Labinator.com](https://labinator.com).
 6. **Narrow & Tall Layout Standard** — Max ~800px width, vertical flows enforced across all engines to prevent horizontal scrolling.
 7. **Robust Error Handling** — Detects HTTP 4xx/5xx from Kroki via `urllib.error.HTTPError`. Configurable timeout (`--timeout`). Shareable Kroki URL printed on failure for manual debugging.
 8. **Secure SVG Parsing** — Uses `defusedxml` to prevent XXE injection when wrapping SVG files in the interactive viewer.
-9. **Test Suite** — 61 pytest tests covering engine registration, URL encoding, pluralization, SVG annotation, edge label parsing, sequence/Mermaid/ERD/BPMN annotation, engine inference from source files, diagram options curl headers, background rect removal, and HTML generation.
+9. **Test Suite** — 61 pytest tests covering engine registration, URL encoding, pluralization, SVG annotation, edge label parsing, sequence/Mermaid/ERD/BPMN annotation, engine inference from source files, diagram-option HTTP headers, background rect removal, and HTML generation.
 
 ---
 
@@ -66,6 +66,7 @@ Maintained by [Labinator.com](https://labinator.com).
 ```text
 kroki-editorial-diagrams/
 ├── README.md
+├── CHANGELOG.md
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── package.json
@@ -89,6 +90,7 @@ kroki-editorial-diagrams/
         │   ├── build_diagram_index.py     # Gallery index generator
         │   ├── _svg_utils.py              # SVG namespace constants + background/class utils
         │   ├── _svg_annotators.py         # Engine-specific SVG annotation functions
+        │   ├── _version.py                # Single-source CLI version string
         │   ├── requirements.txt           # Python dependencies (defusedxml)
         │   └── tests/
         │       └── test_scripts.py        # pytest suite (61 tests)

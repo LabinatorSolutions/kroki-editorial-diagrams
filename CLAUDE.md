@@ -75,17 +75,20 @@ This repo is a Claude Code / Antigravity IDE (Gemini CLI) **skill** — an LLM i
 
 **`build_interactive_kroki_html.py`** — wraps a rendered SVG in an HTML page with click-to-highlight node focus, animated directional edge flows, and pan/zoom. Annotates the raw SVG with `data-node-id`, `data-edge-source`, `data-edge-target` attributes. Uses `defusedxml` for XXE-safe SVG parsing. Interactive tier varies by engine: `full` (PlantUML, C4-PlantUML, Graphviz, D2*, Structurizr*); `best-effort` (Mermaid, ERD); `limited` (BPMN and ~20 others — stderr note printed). *D2 and Structurizr fall back to `best-effort` when no edges are detected.
 
-**`build_diagram_index.py`** — scans a root folder for subfolders containing `rendered.svg` + `.diagram-meta.json`, then generates a dark-mode gallery `index.html`. Metadata is written by the render script after each successful render. The `.diagram-meta.json` schema:
+**`build_diagram_index.py`** — scans a root folder for subfolders containing `rendered.svg` + `.diagram-meta.json`, then generates a dark-mode gallery `index.html`. Metadata is written by the render script after each successful render. The `.diagram-meta.json` schema (exactly the keys `render_kroki_diagram.py` writes):
 
 ```json
-{ "title": "Architecture Overview", "engine": "d2", "summary": "...",
-  "interactive_exists": true, "interactive_href": "interactive.html",
-  "svg_href": "rendered.svg", "tier": "full", "folder": "architecture-d2" }
+{ "title": "Architecture Overview", "engine": "d2", "format": "svg",
+  "summary": "...", "interactive_tier": "full" }
 ```
+
+`interactive_tier` is present only when `--interactive-output` was used. The gallery card fields (`folder`, `interactive_exists`, `interactive_href`, `svg_href`, `tier`) are **computed at index time** by `load_artifact_entry()` from the folder contents — they are not stored in the meta file.
 
 **`_svg_utils.py`** — private module: SVG namespace constants (`SVG_NS`, `NS`), `clean_svg_text`, `append_class`, `soften_svg_background`. Imported by `_svg_annotators.py`.
 
 **`_svg_annotators.py`** — private module: all annotation functions (`annotate_graphviz_like`, `annotate_mermaid`, `annotate_d2`, `annotate_sequence`, `annotate_plantuml_description`) and the `annotate_svg` dispatcher. Engines without a dedicated annotator fall through to `limited` tier; `build_interactive_html_file` prints a stderr warning in that case.
+
+**`_version.py`** — private module: reads `__version__` from the repo-root `package.json` (single source of truth), resolving through the installed skill's symlink via `parents[3]`. Falls back to `0.0.0+unknown` if `package.json` is unreachable. Imported by all three CLIs for `--version`.
 
 ### Reference docs
 
@@ -118,3 +121,4 @@ This repo is a Claude Code / Antigravity IDE (Gemini CLI) **skill** — an LLM i
 - `_svg_annotators.py` engine dispatch: Graphviz/ERD use `annotate_graphviz_like()`; D2 uses `annotate_d2()` (base64-decoded class heuristic); Structurizr uses `annotate_plantuml_description()`; Mermaid uses `annotate_mermaid()`; PlantUML sequence uses `annotate_sequence()`; other PlantUML/C4 use `annotate_plantuml_description()`. All other engines fall through to `limited` tier — `build_interactive_html_file` prints a stderr warning.
 - Interactive viewer keyboard shortcuts (non-obvious): `Space`+drag = pan; `+`/`-` = zoom; `0` = fit; `1` = 100%; arrow keys = pan by 60px.
 - `build_diagram_index.py` infers engine from `source.*` file extension via `_SOURCE_SUFFIX_MAP` when `.diagram-meta.json` is absent (e.g., `.dsl` and `.structurizr` both map to `structurizr`).
+- Version bump: edit `package.json` only. `_version.py` reads it at import time; do not hardcode version strings in the CLIs.

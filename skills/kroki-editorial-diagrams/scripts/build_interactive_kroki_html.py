@@ -4,6 +4,7 @@ import pathlib
 import sys
 from defusedxml.ElementTree import ParseError
 
+from _version import __version__
 from _svg_utils import soften_svg_background  # noqa: F401 — re-exported for callers
 from _svg_annotators import annotate_svg  # noqa: F401 — re-exported for callers
 
@@ -858,7 +859,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Wrap a Kroki SVG in an interactive HTML viewer."
     )
-    parser.add_argument("--version", action="version", version="%(prog)s 1.1.0")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument(
         "--engine", required=True, help="Kroki engine used to render the SVG."
     )
