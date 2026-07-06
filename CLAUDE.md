@@ -108,6 +108,23 @@ This repo is a Claude Code / Antigravity IDE (Gemini CLI) **skill** — an LLM i
 
 `docs/examples/` contains four working diagrams: `architecture-d2`, `erd-schema`, `flowchart-mermaid`, `sequence-plantuml`. Each folder holds a source file, `rendered.svg`, `interactive.html`, and `.diagram-meta.json` (dotfile — `META_FILENAME` constant in `build_diagram_index.py`).
 
+### CI
+
+`.github/workflows/test.yml` runs the pytest suite on push/PR to `main` (Python 3.11, installs `requirements.txt` + `pytest`).
+
+### Adding a new engine (cross-file checklist)
+
+No single source of truth for engine metadata — a new engine touches all of these:
+
+1. `SUPPORTED_ENGINES` list in `render_kroki_diagram.py`.
+2. An annotator function in `_svg_annotators.py` (or route to an existing one if the SVG structure matches), wired into the `annotate_svg` dispatcher.
+3. An `_engine_colors` entry in **both** `build_interactive_kroki_html.py` and `build_diagram_index.py` — these two color maps are duplicated, not shared.
+4. Reference docs: `engine-matrix.md`, `kroki-safe-subset.md`, `use-case-taxonomy.md`, `interactive-support.md`, plus the engine table in `SKILL.md`.
+5. A test in `tests/test_scripts.py`.
+6. A style template in `engine-style-templates.md`.
+
+Design tokens (colors/typography) live in `references/style-guide.md` first, then must be propagated by hand to the light/dark CSS blocks in both `build_interactive_kroki_html.py` and `build_diagram_index.py`, and to `engine-style-templates.md`.
+
 ## Key invariants
 
 - `--interactive-output` only works with `--format svg` (the default).
