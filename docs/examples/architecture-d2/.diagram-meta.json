@@ -1,0 +1,7 @@
+{
+  "title": "Architecture Overview",
+  "engine": "d2",
+  "format": "svg",
+  "summary": "Container layout for production microservices.",
+  "interactive_tier": "full"
+}

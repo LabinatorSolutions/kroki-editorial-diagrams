@@ -1,0 +1,7 @@
+{
+  "title": "Checkout Flowchart",
+  "engine": "mermaid",
+  "format": "svg",
+  "summary": "Logic branches, processes, decision steps.",
+  "interactive_tier": "best-effort"
+}

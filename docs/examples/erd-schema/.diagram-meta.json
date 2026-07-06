@@ -1,0 +1,7 @@
+{
+  "title": "Database Schema",
+  "engine": "erd",
+  "format": "svg",
+  "summary": "Entity fields, primary keys, DB schema mapping.",
+  "interactive_tier": "best-effort"
+}

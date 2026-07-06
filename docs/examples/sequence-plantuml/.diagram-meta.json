@@ -1,0 +1,7 @@
+{
+  "title": "JWT Authentication Flow",
+  "engine": "plantuml",
+  "format": "svg",
+  "summary": "Auditing user JWT sign-on sequence and DB validation.",
+  "interactive_tier": "full"
+}

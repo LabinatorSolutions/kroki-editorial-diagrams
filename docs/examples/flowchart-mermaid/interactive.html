@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkout Flowchart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --paper: #f5f5f5;
+      --paper-2: #ececec;
+      --ink: #2d3142;
+      --muted: #4f5d75;
+      --soft: #7a8399;
+      --rule: rgba(45, 49, 66, 0.12);
+      --accent: #eb6c36;
+      --accent-tint: rgba(235, 108, 54, 0.08);
+      --link: #2e5aa8;
+      
+      --dim-opacity: 0.28;
+      --node-shadow: drop-shadow(0 0 10px rgba(235, 108, 54, 0.3));
+      --focus-ring: rgba(235, 108, 54, 0.4);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Geist', 'Inter', system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    .diagram-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+      background: rgba(245, 245, 245, 0.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      background: rgba(45, 49, 66, 0.05);
+      border: 1px solid var(--rule);
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: color 0.2s ease, background 0.2s ease;
+      font-family: 'Geist Mono', monospace;
+    }
+
+    .back-link:hover { color: var(--ink); background: rgba(45,49,66,0.08); text-decoration: none; }
+
+    .back-link svg {
+      width: 13px; height: 13px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    .nav-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.35rem;
+      font-weight: 400;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+
+    .nav-sep { color: var(--soft); font-size: 0.75rem; }
+
+    .shell {
+      width: 100%;
+      padding: 10px;
+      padding-top: 62px;
+    }
+
+    .stage {
+      position: relative;
+      overflow: hidden;
+      padding: 10px;
+      min-height: calc(100vh - 72px);
+      border-radius: 12px;
+      border: 1px solid var(--rule);
+      background: var(--paper-2);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+        0 8px 24px rgba(0, 0, 0, 0.05);
+    }
+
+    .stage:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .canvas-toolbar {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 5;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      padding: 6px;
+      border-radius: 8px;
+      background: rgba(245, 245, 245, 0.9);
+      border: 1px solid var(--rule);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .canvas-toolbar button {
+      border: 1px solid var(--rule);
+      background: #ffffff;
+      color: var(--muted);
+      border-radius: 4px;
+      min-width: 34px;
+      height: 30px;
+      padding: 0 8px;
+      font-family: 'Geist Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, color 120ms ease, border-color 120ms ease;
+    }
+
+    .canvas-toolbar button:hover {
+      background: var(--accent-tint);
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .canvas-toolbar button:active { transform: translateY(0); }
+
+    .canvas-toolbar button:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .canvas-viewport {
+      position: relative;
+      height: calc(100vh - 92px);
+      min-height: 0;
+      overflow: hidden;
+      border-radius: 8px;
+      background: var(--paper);
+      cursor: default;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .canvas-viewport.is-pan-mode { cursor: grab; }
+    .canvas-viewport.is-dragging { cursor: grabbing; }
+
+    .canvas-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+      overflow: visible;
+    }
+
+    .canvas-content svg {
+      display: block;
+      width: max-content;
+      max-width: none;
+      height: auto;
+      overflow: visible;
+      background: transparent !important;
+    }
+
+    .canvas-status {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      z-index: 4;
+      padding: 5px 12px;
+      border-radius: 6px;
+      background: rgba(245, 245, 245, 0.9);
+      border: 1px solid var(--rule);
+      color: var(--muted);
+      font-family: 'Geist Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+    }
+
+    .interactive-node {
+      cursor: pointer;
+      transition: opacity 160ms ease, filter 160ms ease, transform 160ms ease;
+      transform-origin: center center;
+    }
+
+    .interactive-edge {
+      transition: opacity 160ms ease, filter 160ms ease;
+    }
+
+    .interactive-node.is-dimmed,
+    .interactive-edge.is-dimmed {
+      opacity: var(--dim-opacity);
+    }
+
+    .interactive-node.is-active,
+    .interactive-node.is-connected,
+    .interactive-edge.is-connected {
+      opacity: 1;
+    }
+
+    .interactive-node.is-active {
+      filter: var(--node-shadow);
+    }
+
+    .interactive-node.is-active rect,
+    .interactive-node.is-active ellipse,
+    .interactive-node.is-active circle,
+    .interactive-node.is-active polygon,
+    .interactive-node.is-active path {
+      stroke-width: 2.2px !important;
+      stroke: var(--accent) !important;
+    }
+
+    .interactive-node.is-connected rect,
+    .interactive-node.is-connected ellipse,
+    .interactive-node.is-connected circle,
+    .interactive-node.is-connected polygon,
+    .interactive-node.is-connected path {
+      stroke-width: 1.7px !important;
+      stroke: var(--link) !important;
+    }
+
+    .interactive-edge.is-connected path,
+    .interactive-edge.is-connected line,
+    .interactive-edge.is-connected polyline {
+      stroke-width: 2.2px !important;
+      stroke: var(--accent) !important;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 4px rgba(235, 108, 54, 0.2));
+    }
+
+    .interactive-edge.is-connected polygon {
+      fill: var(--accent) !important;
+      stroke: var(--accent) !important;
+    }
+
+    .interactive-edge.is-connected text,
+    .interactive-edge.is-connected tspan {
+      fill: var(--accent) !important;
+      stroke: none !important;
+      font-weight: 700 !important;
+    }
+
+    .interactive-edge.edge-flow-forward path,
+    .interactive-edge.edge-flow-forward line,
+    .interactive-edge.edge-flow-forward polyline {
+      stroke-dasharray: 10 6;
+      animation: flow-forward 850ms linear infinite;
+    }
+
+    .interactive-edge.edge-flow-reverse path,
+    .interactive-edge.edge-flow-reverse line,
+    .interactive-edge.edge-flow-reverse polyline {
+      stroke-dasharray: 10 6;
+      animation: flow-reverse 850ms linear infinite;
+    }
+
+    .interactive-edge.edge-neutral path,
+    .interactive-edge.edge-neutral line,
+    .interactive-edge.edge-neutral polyline {
+      stroke-dasharray: 8 6;
+      animation: flow-neutral 1150ms ease-in-out infinite;
+    }
+
+    @keyframes flow-forward  { to { stroke-dashoffset: -16; } }
+    @keyframes flow-reverse  { to { stroke-dashoffset:  16; } }
+
+    @keyframes flow-neutral {
+      0%   { stroke-dashoffset: 0;  filter: brightness(1);   }
+      50%  { stroke-dashoffset: 8;  filter: brightness(1.2); }
+      100% { stroke-dashoffset: 16; filter: brightness(1);   }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .interactive-node,
+      .interactive-edge {
+        transition: none;
+      }
+      .interactive-edge.edge-flow-forward path,
+      .interactive-edge.edge-flow-forward line,
+      .interactive-edge.edge-flow-forward polyline,
+      .interactive-edge.edge-flow-reverse path,
+      .interactive-edge.edge-flow-reverse line,
+      .interactive-edge.edge-flow-reverse polyline,
+      .interactive-edge.edge-neutral path,
+      .interactive-edge.edge-neutral line,
+      .interactive-edge.edge-neutral polyline {
+        animation: none;
+      }
+      .canvas-toolbar button {
+        transition: none;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell { padding: 6px; padding-top: 58px; }
+      .canvas-toolbar { top: 10px; right: 10px; gap: 4px; padding: 5px; }
+      .canvas-toolbar button { min-width: 30px; height: 28px; padding: 0 6px; }
+      .canvas-viewport { height: calc(100vh - 74px); }
+      .canvas-status { left: 10px; bottom: 10px; }
+    }
+
+    @media print {
+      .diagram-nav,
+      .canvas-toolbar,
+      .canvas-status { display: none; }
+      .shell { padding: 0; }
+      .stage {
+        border: none; border-radius: 0; padding: 0;
+        box-shadow: none; background: #ffffff;
+      }
+      .canvas-viewport {
+        height: auto; overflow: visible;
+        background: #ffffff;
+      }
+      .canvas-content {
+        position: static; transform: none !important;
+      }
+      .canvas-content svg { max-width: 100%; height: auto; }
+      .interactive-node,
+      .interactive-edge {
+        opacity: 1 !important; filter: none !important;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #2d3142;
+        --paper-2: #393e53;
+        --ink: #f5f5f5;
+        --muted: #bfc0c0;
+        --soft: #8e98ac;
+        --rule: rgba(245, 245, 245, 0.12);
+        --accent: #f08a59;
+        --accent-tint: rgba(240, 138, 89, 0.10);
+        --link: #6a95d8;
+        --dim-opacity: 0.22;
+        --node-shadow: drop-shadow(0 0 10px rgba(240, 138, 89, 0.3));
+        --focus-ring: rgba(240, 138, 89, 0.4);
+      }
+      .canvas-toolbar button { background: #393e53; }
+      .canvas-content svg { background: transparent !important; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="diagram-nav">
+    <a class="back-link" href="../index.html">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Gallery
+    </a>
+    <span class="nav-sep">/</span>
+    <span class="nav-title">Checkout Flowchart</span>
+    <span style="margin-left:auto;padding:3px 9px;border-radius:6px;font-family:'Geist Mono',monospace;font-size:0.7rem;font-weight:600;background:#7a839915;border:1px solid #7a839930;color:#7a8399;">mermaid</span>
+  </nav>
+  <main class="shell">
+    <section class="stage" id="diagram-stage" tabindex="0" aria-label="Interactive diagram canvas">
+      <div class="canvas-toolbar" aria-label="Canvas controls">
+        <button type="button" id="zoom-out" aria-label="Zoom out">-</button>
+        <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
+        <button type="button" id="fit-view" aria-label="Fit to screen">Fit</button>
+        <button type="button" id="actual-size" aria-label="Reset to one hundred percent">100%</button>
+      </div>
+      <div class="canvas-viewport" id="diagram-viewport">
+        <div class="canvas-content" id="diagram-content">
+          <svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" id="container" width="548.22265625" class="flowchart" height="771.859375" viewBox="0 0 548.22265625 771.859375" role="graphics-document document" aria-roledescription="flowchart-v2" data-interactive-engine="mermaid" data-interactive-tier="best-effort"><style>#container{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:13px;fill:#2d3142;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#container .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#container .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#container .error-icon{fill:rgba(235, 108, 54, 0.08);}#container .error-text{fill:#eb6c36;stroke:#eb6c36;}#container .edge-thickness-normal{stroke-width:1px;}#container .edge-thickness-thick{stroke-width:3.5px;}#container .edge-pattern-solid{stroke-dasharray:0;}#container .edge-thickness-invisible{stroke-width:0;fill:none;}#container .edge-pattern-dashed{stroke-dasharray:3;}#container .edge-pattern-dotted{stroke-dasharray:2;}#container .marker{fill:#4f5d75;stroke:#4f5d75;}#container .marker.cross{stroke:#4f5d75;}#container svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:13px;}#container p{margin:0;}#container .label{font-family:"trebuchet ms",verdana,arial,sans-serif;color:#2d3142;}#container .cluster-label text{fill:#eb6c36;}#container .cluster-label span{color:#eb6c36;}#container .cluster-label span p{background-color:transparent;}#container .label text,#container span{fill:#2d3142;color:#2d3142;}#container .node rect,#container .node circle,#container .node ellipse,#container .node polygon,#container .node path{fill:#ffffff;stroke:#2d3142;stroke-width:1px;}#container .rough-node .label text,#container .node .label text,#container .image-shape .label,#container .icon-shape .label{text-anchor:middle;}#container .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#container .rough-node .label,#container .node .label,#container .image-shape .label,#container .icon-shape .label{text-align:center;}#container .node.clickable{cursor:pointer;}#container .root .anchor path{fill:#4f5d75!important;stroke-width:0;stroke:#4f5d75;}#container .arrowheadPath{fill:#0a0a0a;}#container .edgePath .path{stroke:#4f5d75;stroke-width:1px;}#container .flowchart-link{stroke:#4f5d75;fill:none;}#container .edgeLabel{background-color:#ececec;text-align:center;}#container .edgeLabel p{background-color:#ececec;}#container .edgeLabel rect{opacity:0.5;background-color:#ececec;fill:#ececec;}#container .labelBkg{background-color:rgba(236, 236, 236, 0.5);}#container .cluster rect{fill:rgba(235, 108, 54, 0.08);stroke:#eb6c36;stroke-width:1px;}#container .cluster text{fill:#eb6c36;}#container .cluster span{color:#eb6c36;}#container div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:12px;background:rgba(235, 108, 54, 0.08);border:1px solid #eb6c36;border-radius:2px;pointer-events:none;z-index:100;}#container .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#2d3142;}#container rect.text{fill:none;stroke-width:0;}#container .icon-shape,#container .image-shape{background-color:#ececec;text-align:center;}#container .icon-shape p,#container .image-shape p{background-color:#ececec;padding:2px;}#container .icon-shape .label rect,#container .image-shape .label rect{opacity:0.5;background-color:#ececec;fill:#ececec;}#container .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#container .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#container .node .neo-node{stroke:#2d3142;}#container [data-look="neo"].node rect,#container [data-look="neo"].cluster rect,#container [data-look="neo"].node polygon{stroke:url(#container-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#container [data-look="neo"].node path{stroke:url(#container-gradient);stroke-width:1px;}#container [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#container [data-look="neo"].node .neo-line path{stroke:#2d3142;filter:none;}#container [data-look="neo"].node circle{stroke:url(#container-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#container [data-look="neo"].node circle .state-start{fill:#000000;}#container [data-look="neo"].icon-shape .icon{fill:url(#container-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#container [data-look="neo"].icon-shape .icon-neo path{stroke:url(#container-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#container :root{--mermaid-font-family:"trebuchet ms",verdana,arial,sans-serif;}</style><g><marker id="container_flowchart-v2-pointEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;" /></marker><marker id="container_flowchart-v2-pointStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="4.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 5 L 10 10 L 10 0 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;" /></marker><marker id="container_flowchart-v2-pointEnd-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="11.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="10.5" markerHeight="14" orient="auto"><path d="M 0 0 L 11.5 7 L 0 14 z" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;" /></marker><marker id="container_flowchart-v2-pointStart-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="1" refY="7" markerUnits="userSpaceOnUse" markerWidth="11.5" markerHeight="14" orient="auto"><polygon points="0,7 11.5,14 11.5,0" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;" /></marker><marker id="container_flowchart-v2-circleEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="11" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;" /></marker><marker id="container_flowchart-v2-circleStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-1" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;" /></marker><marker id="container_flowchart-v2-circleEnd-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refY="5" refX="12.25" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;" /></marker><marker id="container_flowchart-v2-circleStart-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-2" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;" /></marker><marker id="container_flowchart-v2-crossEnd" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="12" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;" /></marker><marker id="container_flowchart-v2-crossStart" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="-1" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;" /></marker><marker id="container_flowchart-v2-crossEnd-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="17.7" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5;" /></marker><marker id="container_flowchart-v2-crossStart-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="-3.5" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5; stroke-dasharray: 1, 0;" /></marker><g class="root"><g class="clusters" /><g class="edgePaths"><path d="M267.481,57.5L262.507,61.667C257.532,65.833,247.582,74.167,242.608,81.833C237.633,89.5,237.633,96.5,237.633,100L237.633,103.5" id="container-L_A_B_0" class="edge-pattern-solid edge-thickness-normal flowchart-link interactive-edge" style=";" data-edge="true" data-et="edge" data-id="L_A_B_0" data-points="W3sieCI6MjY3LjQ4MTI3MzU1NTI3NjQsInkiOjU3LjV9LHsieCI6MjM3LjYzMjgxMjUsInkiOjgyLjV9LHsieCI6MjM3LjYzMjgxMjUsInkiOjEwNy41fV0=" data-look="classic" marker-end="url(#container_flowchart-v2-pointEnd)" data-edge-source="A" data-edge-target="B" data-edge-kind="directed" /><path d="M203.637,204.41L191.255,215.868C178.873,227.326,154.108,250.241,141.726,266.824C129.344,283.406,129.344,293.656,129.344,298.781L129.344,303.906" id="container-L_B_C_0" class="edge-pattern-solid edge-thickness-normal flowchart-link interactive-edge" style=";" data-edge="true" data-et="edge" data-id="L_B_C_0" data-points="W3sieCI6MjAzLjYzNzAxODA4MjMwNTk5LCJ5IjoyMDQuNDEwNDU1NTgyMzA1OTl9LHsieCI6MTI5LjM0Mzc1LCJ5IjoyNzMuMTU2MjV9LHsieCI6MTI5LjM0Mzc1LCJ5IjozMDcuOTA2MjV9XQ==" data-look="classic" marker-end="url(#container_flowchart-v2-pointEnd)" data-edge-source="B" data-edge-target="C" data-edge-kind="directed" /><path d="M271.629,204.41L284.011,215.868C296.393,227.326,321.157,250.241,333.54,266.824C345.922,283.406,345.922,293.656,345.922,298.781L345.922,303.906" id="container-L_B_D_0" class="edge-pattern-solid edge-thickness-normal flowchart-link interactive-edge" style=";" data-edge="true" data-et="edge" data-id="L_B_D_0" data-points="W3sieCI6MjcxLjYyODYwNjkxNzY5NCwieSI6MjA0LjQxMDQ1NTU4MjMwNTk5fSx7IngiOjM0NS45MjE4NzUsInkiOjI3My4xNTYyNX0seyJ4IjozNDUuOTIxODc1LCJ5IjozMDcuOTA2MjV9XQ==" data-look="classic" marker-end="url(#container_flowchart-v2-pointEnd)" data-edge-source="B" data-edge-target="D" data-edge-kind="directed" /><path d="M129.344,357.406L129.344,361.573C129.344,365.74,129.344,374.073,129.344,381.74C129.344,389.406,129.344,396.406,129.344,399.906L129.344,403.406" id="container-L_C_E_0" class="edge-pattern-solid edge-thickness-normal flowchart-link interactive-edge" style=";" data-edge="true" data-et="edge" data-id="L_C_E_0" data-points="W3sieCI6MTI5LjM0Mzc1LCJ5IjozNTcuNDA2MjV9LHsieCI6MTI5LjM0Mzc1LCJ5IjozODIuNDA2MjV9LHsieCI6MTI5LjM0Mzc1LCJ5Ijo0MDcuNDA2MjV9XQ==" data-look="classic" marker-end="url(#container_flowchart-v2-pointEnd)" data-edge-source="C" data-edge-target="E" data-edge-kind="directed" /><path d="M118.661,534.677L117.274,542.249C115.886,549.821,113.111,564.965,111.724,577.662C110.336,590.359,110.336,600.609,110.336,605.734L110.336,610.859" id="container-L_E_F_0" class="edge-pattern-solid edge-thickness-normal flowchart-link interactive-edge" style=";" data-edge="true" data-et="edge" data-id="L_E_F_0" data-points="W3sieCI6MTE4LjY2MTM4MzU3MzM2MDkyLCJ5Ijo1MzQuNjc3MDA4NTczMzYwOX0seyJ4IjoxMTAuMzM1OTM3NSwieSI6NTgwLjEwOTM3NX0seyJ4IjoxMTAuMzM1OTM3NSwieSI6NjE0Ljg1OTM3NX1d" data-look="classic" marker-end="url(#container_flowchart-v2-pointEnd)" data-edge-source="E" data-edge-target="F" data-edge-kind="directed" /><path d="M170.513,504.19L189.246,516.844C207.979,529.497,245.444,554.803,279.871,573.025C314.299,591.247,345.687,602.384,361.381,607.953L377.076,613.522" id="container-L_E_G_0" class="edge-pattern-solid edge-thickness-normal flowchart-link interactive-edge" style=";" data-edge="true" data-et="edge" data-id="L_E_G_0" data-points="W3sieCI6MTcwLjUxMjcwNTY0NjQxNjI2LCJ5Ijo1MDQuMTkwNDE5MzUzNTgzNzZ9LHsieCI6MjgyLjkxMDE1NjI1LCJ5Ijo1ODAuMTA5Mzc1fSx7IngiOjM4MC44NDUyOTI4MDQ2MjE4NiwieSI6NjE0Ljg1OTM3NX1d" data-look="classic" marker-end="url(#container_flowchart-v2-pointEnd)" data-edge-source="E" data-edge-target="G" data-edge-kind="directed" /><path d="M110.336,664.359L110.336,668.526C110.336,672.693,110.336,681.026,110.336,688.693C110.336,696.359,110.336,703.359,110.336,706.859L110.336,710.359" id="container-L_F_H_0" class="edge-pattern-solid edge-thickness-normal flowchart-link interactive-edge" style=";" data-edge="true" data-et="edge" data-id="L_F_H_0" data-points="W3sieCI6MTEwLjMzNTkzNzUsInkiOjY2NC4zNTkzNzV9LHsieCI6MTEwLjMzNTkzNzUsInkiOjY4OS4zNTkzNzV9LHsieCI6MTEwLjMzNTkzNzUsInkiOjcxNC4zNTkzNzV9XQ==" data-look="classic" marker-end="url(#container_flowchart-v2-pointEnd)" data-edge-source="F" data-edge-target="H" data-edge-kind="directed" /><path d="M456.472,614.859L457.846,609.068C459.221,603.276,461.97,591.693,463.344,568.613C464.719,545.534,464.719,510.958,464.719,478.008C464.719,445.057,464.719,413.732,464.719,389.777C464.719,365.823,464.719,349.24,464.719,331.031C464.719,312.823,464.719,292.99,464.719,266.372C464.719,239.755,464.719,206.354,464.719,174.578C464.719,142.802,464.719,112.651,451.314,93.598C437.909,74.546,411.099,66.592,397.694,62.615L384.288,58.638" id="container-L_G_A_0" class="edge-pattern-solid edge-thickness-normal flowchart-link interactive-edge" style=";" data-edge="true" data-et="edge" data-id="L_G_A_0" data-points="W3sieCI6NDU2LjQ3MTU1NjU5MTM4NjU2LCJ5Ijo2MTQuODU5Mzc1fSx7IngiOjQ2NC43MTg3NSwieSI6NTgwLjEwOTM3NX0seyJ4Ijo0NjQuNzE4NzUsInkiOjQ3Ni4zODI4MTI1fSx7IngiOjQ2NC43MTg3NSwieSI6MzgyLjQwNjI1fSx7IngiOjQ2NC43MTg3NSwieSI6MzMyLjY1NjI1fSx7IngiOjQ2NC43MTg3NSwieSI6MjczLjE1NjI1fSx7IngiOjQ2NC43MTg3NSwieSI6MTcyLjk1MzEyNX0seyJ4Ijo0NjQuNzE4NzUsInkiOjgyLjV9LHsieCI6MzgwLjQ1MzY3NDYyMzExNTYsInkiOjU3LjV9XQ==" data-look="classic" marker-end="url(#container_flowchart-v2-pointEnd)" data-edge-source="G" data-edge-target="A" data-edge-kind="directed" /></g><g class="edgeLabels"><g class="edgeLabel"><g class="label" data-id="L_A_B_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><html:div class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="edgeLabel" /></html:div></foreignObject></g></g><g class="edgeLabel" transform="translate(129.34375, 273.15625)"><g class="label" data-id="L_B_C_0" transform="translate(-9.7734375, -9.75)"><foreignObject width="19.546875" height="19.5"><html:div class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="edgeLabel"><html:p>Yes</html:p></html:span></html:div></foreignObject></g></g><g class="edgeLabel" transform="translate(345.921875, 273.15625)"><g class="label" data-id="L_B_D_0" transform="translate(-8.2421875, -9.75)"><foreignObject width="16.484375" height="19.5"><html:div class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="edgeLabel"><html:p>No</html:p></html:span></html:div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_C_E_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><html:div class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="edgeLabel" /></html:div></foreignObject></g></g><g class="edgeLabel" transform="translate(110.3359375, 580.109375)"><g class="label" data-id="L_E_F_0" transform="translate(-9.7734375, -9.75)"><foreignObject width="19.546875" height="19.5"><html:div class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="edgeLabel"><html:p>Yes</html:p></html:span></html:div></foreignObject></g></g><g class="edgeLabel" transform="translate(269.76838, 571.23275)"><g class="label" data-id="L_E_G_0" transform="translate(-8.2421875, -9.75)"><foreignObject width="16.484375" height="19.5"><html:div class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="edgeLabel"><html:p>No</html:p></html:span></html:div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_F_H_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><html:div class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="edgeLabel" /></html:div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_G_A_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><html:div class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="edgeLabel" /></html:div></foreignObject></g></g></g><g class="nodes"><g class="default interactive-node node" id="container-flowchart-A-0" data-look="classic" transform="translate(297.03125, 32.75)" data-node-id="A"><rect class="basic label-container" style="" x="-88.8515625" y="-24.75" width="177.703125" height="49.5" /><g class="label" style="" transform="translate(-58.8515625, -9.75)"><rect /><foreignObject width="117.703125" height="19.5"><html:div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="nodeLabel"><html:p>User visits checkout</html:p></html:span></html:div></foreignObject></g></g><g class="default interactive-node node" id="container-flowchart-B-1" data-look="classic" transform="translate(237.6328125, 172.953125)" data-node-id="B"><polygon points="65.453125,0 130.90625,-65.453125 65.453125,-130.90625 0,-65.453125" class="label-container" transform="translate(-64.953125, 65.453125)" /><g class="label" style="" transform="translate(-40.703125, -9.75)"><rect /><foreignObject width="81.40625" height="19.5"><html:div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="nodeLabel"><html:p>Item in stock?</html:p></html:span></html:div></foreignObject></g></g><g class="default interactive-node node" id="container-flowchart-C-3" data-look="classic" transform="translate(129.34375, 332.65625)" data-node-id="C"><rect class="basic label-container" style="" x="-82.78125" y="-24.75" width="165.5625" height="49.5" /><g class="label" style="" transform="translate(-52.78125, -9.75)"><rect /><foreignObject width="105.5625" height="19.5"><html:div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="nodeLabel"><html:p>Reserve inventory</html:p></html:span></html:div></foreignObject></g></g><g class="default interactive-node node" id="container-flowchart-D-5" data-look="classic" transform="translate(345.921875, 332.65625)" data-node-id="D"><rect class="basic label-container" style="" x="-83.796875" y="-24.75" width="167.59375" height="49.5" /><g class="label" style="" transform="translate(-53.796875, -9.75)"><rect /><foreignObject width="107.59375" height="19.5"><html:div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="nodeLabel"><html:p>Show out-of-stock</html:p></html:span></html:div></foreignObject></g></g><g class="default interactive-node node" id="container-flowchart-E-7" data-look="classic" transform="translate(129.34375, 476.3828125)" data-node-id="E"><polygon points="68.9765625,0 137.953125,-68.9765625 68.9765625,-137.953125 0,-68.9765625" class="label-container" transform="translate(-68.4765625, 68.9765625)" /><g class="label" style="" transform="translate(-44.2265625, -9.75)"><rect /><foreignObject width="88.453125" height="19.5"><html:div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="nodeLabel"><html:p>Payment valid?</html:p></html:span></html:div></foreignObject></g></g><g class="default interactive-node node" id="container-flowchart-F-9" data-look="classic" transform="translate(110.3359375, 639.609375)" data-node-id="F"><rect class="basic label-container" style="" x="-70.703125" y="-24.75" width="141.40625" height="49.5" /><g class="label" style="" transform="translate(-40.703125, -9.75)"><rect /><foreignObject width="81.40625" height="19.5"><html:div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="nodeLabel"><html:p>Confirm order</html:p></html:span></html:div></foreignObject></g></g><g class="default interactive-node node" id="container-flowchart-G-11" data-look="classic" transform="translate(450.59765625, 639.609375)" data-node-id="G"><rect class="basic label-container" style="" x="-89.625" y="-24.75" width="179.25" height="49.5" /><g class="label" style="" transform="translate(-59.625, -9.75)"><rect /><foreignObject width="119.25" height="19.5"><html:div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="nodeLabel"><html:p>Show payment error</html:p></html:span></html:div></foreignObject></g></g><g class="default interactive-node node" id="container-flowchart-H-13" data-look="classic" transform="translate(110.3359375, 739.109375)" data-node-id="H"><rect class="basic label-container" style="" x="-102.3359375" y="-24.75" width="204.671875" height="49.5" /><g class="label" style="" transform="translate(-72.3359375, -9.75)"><rect /><foreignObject width="144.671875" height="19.5"><html:div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><html:span class="nodeLabel"><html:p>Send confirmation email</html:p></html:span></html:div></foreignObject></g></g></g></g></g><defs><filter id="container-drop-shadow" height="130%" width="130%"><feDropShadow dx="4" dy="4" stdDeviation="0" flood-opacity="0.06" flood-color="#000000" /></filter></defs><defs><filter id="container-drop-shadow-small" height="150%" width="150%"><feDropShadow dx="2" dy="2" stdDeviation="0" flood-opacity="0.06" flood-color="#000000" /></filter></defs><linearGradient id="container-gradient" gradientUnits="objectBoundingBox" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#2d3142" stop-opacity="1" /><stop offset="100%" stop-color="#bfc0c0" stop-opacity="1" /></linearGradient></svg>
+        </div>
+      </div>
+      <div class="canvas-status" id="diagram-status">Fit 100%</div>
+    </section>
+  </main>
+  <script>
+    const stage = document.getElementById("diagram-stage");
+    const viewport = document.getElementById("diagram-viewport");
+    const content = document.getElementById("diagram-content");
+    const status = document.getElementById("diagram-status");
+    const zoomInButton = document.getElementById("zoom-in");
+    const zoomOutButton = document.getElementById("zoom-out");
+    const fitButton = document.getElementById("fit-view");
+    const actualSizeButton = document.getElementById("actual-size");
+    const svg = content.querySelector("svg");
+
+    if (svg) {
+      const nodes = Array.from(svg.querySelectorAll("[data-node-id]"));
+      const edges = Array.from(svg.querySelectorAll("[data-edge-source][data-edge-target]"));
+      const PADDING = 28;
+      const PAN_STEP = 60;
+      const SCALE_STEP = 1.16;
+      const MIN_SCALE = 0.08;
+      const MAX_SCALE = 3.5;
+      let rawBounds;
+      try {
+        rawBounds = svg.getBBox();
+      } catch (e) {
+        rawBounds = { x: 0, y: 0, width: 0, height: 0 };
+      }
+      const normalizedBounds = (Number.isFinite(rawBounds.width) && rawBounds.width > 0 && Number.isFinite(rawBounds.height) && rawBounds.height > 0)
+        ? rawBounds
+        : null;
+
+      let scale = 1;
+      let translateX = 0;
+      let translateY = 0;
+      let fitScale = 1;
+      let isSpacePressed = false;
+      let isDragging = false;
+      let activePointerId = null;
+      let dragStartX = 0;
+      let dragStartY = 0;
+      let dragOriginX = 0;
+      let dragOriginY = 0;
+      let shouldAutoFitOnResize = true;
+      let selectedNodeId = null;
+
+      if (normalizedBounds) {
+        svg.style.transform = `translate(${-normalizedBounds.x}px, ${-normalizedBounds.y}px)`;
+        svg.style.transformOrigin = "top left";
+        content.style.width = `${normalizedBounds.width}px`;
+        content.style.height = `${normalizedBounds.height}px`;
+      }
+
+      const getCanvasSize = () => {
+        if (normalizedBounds) {
+          return { width: normalizedBounds.width, height: normalizedBounds.height };
+        }
+
+        const viewBox = svg.viewBox && svg.viewBox.baseVal;
+        if (viewBox && viewBox.width && viewBox.height) {
+          return { width: viewBox.width, height: viewBox.height };
+        }
+
+        let box;
+        try {
+          box = svg.getBBox();
+        } catch (e) {
+          box = { x: 0, y: 0, width: 800, height: 600 };
+        }
+        return { width: box.width || 1, height: box.height || 1 };
+      };
+
+      const clampScale = (nextScale) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, nextScale));
+
+      const applyTransform = () => {
+        content.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        const zoomPercent = Math.round(scale * 100);
+        status.textContent = `Zoom ${zoomPercent}%`;
+      };
+
+      const centerForScale = (nextScale) => {
+        const canvas = getCanvasSize();
+        const viewportRect = viewport.getBoundingClientRect();
+        return {
+          x: (viewportRect.width - canvas.width * nextScale) / 2,
+          y: (viewportRect.height - canvas.height * nextScale) / 2,
+        };
+      };
+
+      const fitToViewport = () => {
+        const canvas = getCanvasSize();
+        const viewportRect = viewport.getBoundingClientRect();
+        const usableWidth = Math.max(120, viewportRect.width - PADDING * 2);
+        const usableHeight = Math.max(120, viewportRect.height - PADDING * 2);
+        fitScale = clampScale(Math.min(usableWidth / canvas.width, usableHeight / canvas.height));
+        scale = fitScale;
+        const centered = centerForScale(scale);
+        translateX = centered.x;
+        translateY = centered.y;
+        shouldAutoFitOnResize = true;
+        applyTransform();
+        status.textContent = `Fit ${Math.round(scale * 100)}%`;
+      };
+
+      const resetToActualSize = () => {
+        scale = 1;
+        const centered = centerForScale(scale);
+        translateX = centered.x;
+        translateY = centered.y;
+        shouldAutoFitOnResize = false;
+        applyTransform();
+      };
+
+      const zoomAtPoint = (factor, clientX, clientY) => {
+        const viewportRect = viewport.getBoundingClientRect();
+        const pointerX = clientX - viewportRect.left;
+        const pointerY = clientY - viewportRect.top;
+        const nextScale = clampScale(scale * factor);
+        const scaleRatio = nextScale / scale;
+
+        translateX = pointerX - (pointerX - translateX) * scaleRatio;
+        translateY = pointerY - (pointerY - translateY) * scaleRatio;
+        scale = nextScale;
+        shouldAutoFitOnResize = false;
+        applyTransform();
+      };
+
+      const panBy = (dx, dy) => {
+        translateX += dx;
+        translateY += dy;
+        shouldAutoFitOnResize = false;
+        applyTransform();
+      };
+
+      fitToViewport();
+
+      const nodeMap = new Map();
+      const nodeCenterCache = new Map();
+      for (const node of nodes) {
+        const nodeId = node.dataset.nodeId;
+        if (!nodeMap.has(nodeId)) nodeMap.set(nodeId, []);
+        nodeMap.get(nodeId).push(node);
+      }
+
+      const getNodeCenter = (nodeId) => {
+        if (nodeCenterCache.has(nodeId)) return nodeCenterCache.get(nodeId);
+
+        const relatedNodes = nodeMap.get(nodeId) || [];
+        if (!relatedNodes.length) return null;
+
+        let totalX = 0;
+        let totalY = 0;
+        let count = 0;
+
+        for (const related of relatedNodes) {
+          try {
+            const box = related.getBBox();
+            if (!Number.isFinite(box.x) || !Number.isFinite(box.y)) continue;
+            totalX += box.x + box.width / 2;
+            totalY += box.y + box.height / 2;
+            count += 1;
+          } catch (e) {
+            // Ignore if element is not rendered / hidden
+          }
+        }
+
+        const center = count ? { x: totalX / count, y: totalY / count } : null;
+        nodeCenterCache.set(nodeId, center);
+        return center;
+      };
+
+      const getFlowDirectionClass = (sourceId, targetId) => {
+        const sourceCenter = getNodeCenter(sourceId);
+        const targetCenter = getNodeCenter(targetId);
+        if (!sourceCenter || !targetCenter) return "edge-flow-forward";
+
+        const dx = targetCenter.x - sourceCenter.x;
+        const dy = targetCenter.y - sourceCenter.y;
+
+        if (Math.abs(dx) >= Math.abs(dy)) {
+          return dx >= 0 ? "edge-flow-forward" : "edge-flow-reverse";
+        }
+
+        return dy >= 0 ? "edge-flow-forward" : "edge-flow-reverse";
+      };
+
+      const resetState = () => {
+        selectedNodeId = null;
+        for (const node of nodes) {
+          node.classList.remove("is-dimmed", "is-active", "is-connected");
+        }
+        for (const edge of edges) {
+          edge.classList.remove(
+            "is-dimmed",
+            "is-connected",
+            "edge-incoming",
+            "edge-outgoing",
+            "edge-neutral",
+            "edge-flow-forward",
+            "edge-flow-reverse"
+          );
+        }
+      };
+
+      const focusNode = (nodeId) => {
+        resetState();
+        selectedNodeId = nodeId;
+
+        for (const node of nodes) {
+          node.classList.add("is-dimmed");
+        }
+        for (const edge of edges) {
+          edge.classList.add("is-dimmed");
+        }
+
+        for (const active of nodeMap.get(nodeId) || []) {
+          active.classList.remove("is-dimmed");
+          active.classList.add("is-active");
+        }
+
+        for (const edge of edges) {
+          const source = edge.dataset.edgeSource;
+          const target = edge.dataset.edgeTarget;
+          if (source !== nodeId && target !== nodeId) continue;
+
+          edge.classList.remove("is-dimmed");
+          edge.classList.add("is-connected");
+
+          const directed = edge.dataset.edgeKind === "directed";
+          if (!directed || source === target) {
+            edge.classList.add("edge-neutral");
+          } else if (source === nodeId) {
+            edge.classList.add("edge-outgoing");
+            edge.classList.add(getFlowDirectionClass(source, target));
+          } else {
+            edge.classList.add("edge-incoming");
+            edge.classList.add(getFlowDirectionClass(source, target));
+          }
+
+          for (const relatedId of [source, target]) {
+            for (const related of nodeMap.get(relatedId) || []) {
+              related.classList.remove("is-dimmed");
+              related.classList.add(relatedId === nodeId ? "is-active" : "is-connected");
+            }
+          }
+        }
+      };
+
+      for (const node of nodes) {
+        node.addEventListener("click", (event) => {
+          event.stopPropagation();
+          focusNode(node.dataset.nodeId);
+        });
+      }
+
+      svg.addEventListener("click", (event) => {
+        const clickedNode = event.target.closest("[data-node-id]");
+        if (clickedNode) return;
+        resetState();
+      });
+
+      viewport.addEventListener("click", (event) => {
+        if (!event.target.closest("[data-node-id]")) {
+          resetState();
+        }
+      });
+
+      zoomInButton.addEventListener("click", () => {
+        const rect = viewport.getBoundingClientRect();
+        zoomAtPoint(SCALE_STEP, rect.left + rect.width / 2, rect.top + rect.height / 2);
+      });
+
+      zoomOutButton.addEventListener("click", () => {
+        const rect = viewport.getBoundingClientRect();
+        zoomAtPoint(1 / SCALE_STEP, rect.left + rect.width / 2, rect.top + rect.height / 2);
+      });
+
+      fitButton.addEventListener("click", fitToViewport);
+      actualSizeButton.addEventListener("click", resetToActualSize);
+
+      viewport.addEventListener("wheel", (event) => {
+        if (event.ctrlKey || event.metaKey || event.altKey) {
+          event.preventDefault();
+          const factor = Math.exp(-event.deltaY * 0.0015);
+          zoomAtPoint(factor, event.clientX, event.clientY);
+          return;
+        }
+
+        event.preventDefault();
+        const panX = event.shiftKey ? -event.deltaY : -event.deltaX;
+        const panY = event.shiftKey ? 0 : -event.deltaY;
+        panBy(panX, panY);
+      }, { passive: false });
+
+      viewport.addEventListener("pointerdown", (event) => {
+        const wantsPan = event.button === 1 || (event.button === 0 && isSpacePressed) || event.pointerType === "touch";
+        if (!wantsPan) return;
+
+        event.preventDefault();
+        isDragging = true;
+        activePointerId = event.pointerId;
+        dragStartX = event.clientX;
+        dragStartY = event.clientY;
+        dragOriginX = translateX;
+        dragOriginY = translateY;
+        viewport.classList.add("is-dragging");
+        viewport.setPointerCapture(event.pointerId);
+      });
+
+      viewport.addEventListener("pointermove", (event) => {
+        if (!isDragging || event.pointerId !== activePointerId) return;
+        translateX = dragOriginX + (event.clientX - dragStartX);
+        translateY = dragOriginY + (event.clientY - dragStartY);
+        shouldAutoFitOnResize = false;
+        applyTransform();
+      });
+
+      const endDrag = (event) => {
+        if (!isDragging) return;
+        if (event && activePointerId !== null && event.pointerId !== activePointerId) return;
+        isDragging = false;
+        activePointerId = null;
+        viewport.classList.remove("is-dragging");
+      };
+
+      viewport.addEventListener("pointerup", endDrag);
+      viewport.addEventListener("pointercancel", endDrag);
+      viewport.addEventListener("pointerleave", endDrag);
+
+      const updatePanModeClass = () => {
+        viewport.classList.toggle("is-pan-mode", isSpacePressed && !isDragging);
+      };
+
+      window.addEventListener("keydown", (event) => {
+        if (event.target && /input|textarea|select/i.test(event.target.tagName)) return;
+
+        if (event.code === "Space") {
+          event.preventDefault();
+        }
+
+        if (event.code === "Space" && !event.repeat) {
+          isSpacePressed = true;
+          updatePanModeClass();
+        }
+
+        if (event.key === "+" || event.key === "=") {
+          event.preventDefault();
+          const rect = viewport.getBoundingClientRect();
+          zoomAtPoint(SCALE_STEP, rect.left + rect.width / 2, rect.top + rect.height / 2);
+        } else if (event.key === "-" || event.key === "_") {
+          event.preventDefault();
+          const rect = viewport.getBoundingClientRect();
+          zoomAtPoint(1 / SCALE_STEP, rect.left + rect.width / 2, rect.top + rect.height / 2);
+        } else if (event.key === "0") {
+          event.preventDefault();
+          fitToViewport();
+        } else if (event.key === "1") {
+          event.preventDefault();
+          resetToActualSize();
+        } else if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          panBy(PAN_STEP, 0);
+        } else if (event.key === "ArrowRight") {
+          event.preventDefault();
+          panBy(-PAN_STEP, 0);
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          panBy(0, PAN_STEP);
+        } else if (event.key === "ArrowDown") {
+          event.preventDefault();
+          panBy(0, -PAN_STEP);
+        }
+      });
+
+      window.addEventListener("keyup", (event) => {
+        if (event.code === "Space") {
+          event.preventDefault();
+          isSpacePressed = false;
+          updatePanModeClass();
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        if (shouldAutoFitOnResize) fitToViewport();
+      });
+    }
+  </script>
+</body>
+</html>
